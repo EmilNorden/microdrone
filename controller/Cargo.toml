@@ -1,0 +1,55 @@
+[package]
+edition      = "2021"
+name         = "controller"
+rust-version = "1.86"
+version      = "0.1.0"
+
+[[bin]]
+name = "controller"
+path = "./src/bin/main.rs"
+
+[dependencies]
+esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32s3"] }
+esp-hal                = { version = "=1.0.0-rc.0", features = ["esp32s3", "unstable"] }
+
+bt-hci = { version = "0.3.2", features = [] }
+# critical-section = "1.2.0"
+embassy-executor = { version = "0.7.0", features = ["task-arena-size-20480"] }
+embassy-futures = "0.1.1"
+embassy-sync = "0.7.0"
+embassy-time = "0.4.0"
+# embedded-io = "0.6.1"
+# embedded-io-async = "0.6.1"
+esp-alloc = "0.8.0"
+embedded-hal = "1.0.0"
+embassy-embedded-hal = "0.3.1"
+embedded-hal-bus = { version = "0.3.0"}
+esp-hal-embassy = { version = "0.9.0", features = ["esp32s3"] }
+esp-println = {version = "0.15.0", features = ["log-04", "esp32s3"]}
+esp-wifi = { version = "0.15.0", features = [
+  "ble",
+  "builtin-scheduler",
+  "esp-alloc",
+  "esp32s3",
+] }
+# static_cell = "2.1.1"
+# trouble-host = { version = "0.2.4", features = ["gatt", "derive", "scan"] }
+trouble-host = { path = "../../trouble/host", features = ["gatt", "derive", "scan"] }
+log = "0.4.27"
+heapless = "0.8"
+ssd1351 = "0.5.0"
+embedded-graphics = "0.8.1"
+
+[profile.dev]
+# Rust debug is too slow.
+# For debug builds always builds with some optimization
+opt-level = "s"
+
+[profile.release]
+codegen-units    = 1     # LLVM can perform better optimizations using a single thread
+debug            = 2
+debug-assertions = false
+incremental      = false
+lto              = 'fat'
+opt-level        = 's'
+overflow-checks  = false
