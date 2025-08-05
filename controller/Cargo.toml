@@ -38,7 +38,8 @@ trouble-host = { path = "../../trouble/host", features = ["gatt", "derive", "sca
 log = "0.4.27"
 heapless = "0.8"
 ssd1351 = "0.5.0"
-embedded-graphics = "0.8.1"
+embedded-graphics = { version = "0.8.1"}
+tinyui = { git = "https://github.com/EmilNorden/rust-tinyui.git" }
 
 [profile.dev]
 # Rust debug is too slow.

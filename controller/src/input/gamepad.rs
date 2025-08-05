@@ -17,7 +17,7 @@ use trouble_host::prelude::DefaultPacketPool;
 use trouble_host::{Address, Controller, Host, HostResources};
 use crate::input::pilot_controller;
 
-pub struct GamepadState {
+pub struct HIDReport {
     pub dpad: u8,
     pub left_stick_x: u8,
     pub left_stick_y: u8,
@@ -39,7 +39,7 @@ pub enum GamepadButton {
     R4
 }
 
-impl GamepadState {
+impl HIDReport {
     pub fn button_pressed(&self, button: GamepadButton) -> bool {
         match button {
             GamepadButton::A => (self.buttons & 1) != 0,
@@ -54,9 +54,9 @@ impl GamepadState {
     }
 }
 
-impl Debug for GamepadState {
+impl Debug for HIDReport {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("GamepadState")
+        f.debug_struct("HIDReport")
             .field("dpad", &self.dpad)
             .field("left_stick_x", &self.left_stick_x)
             .field("left_stick_y", &self.left_stick_y)
@@ -69,9 +69,9 @@ impl Debug for GamepadState {
     }
 }
 
-impl GamepadState {
-    pub fn from_hid_report(report: &[u8]) -> Self {
-        GamepadState {
+impl HIDReport {
+    pub fn from_raw(report: &[u8]) -> Self {
+        HIDReport {
             dpad: report[0],
             left_stick_x: report[1],
             left_stick_y: report[2],
@@ -157,6 +157,7 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
             let conn = match central.connect(&config).await {
                 Ok(c) => {
                     esp_println::println!("Connected");
+                    pilot_controller::update_connected(true);
                     c
                 }
                 Err(_) => {
@@ -233,7 +234,6 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                     .await
                     .unwrap();
 
-                esp_println::println!("Starting the stuff");
                 let mut buttons_listener = client
                     .subscribe(&hid_report_characteristic, true)
                     .await
@@ -258,9 +258,9 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                                 break 'outer;
                             }
                             Either::Second(notification) => {
-                                let gamepad_state = GamepadState::from_hid_report(notification.as_ref());
-                                esp_println::println!("{} {:?}", i, gamepad_state);
-                                pilot_controller::update_from_gamepad_state(gamepad_state);
+                                let hid_report = HIDReport::from_raw(notification.as_ref());
+                                esp_println::println!("{} {:?}", i, hid_report);
+                                pilot_controller::update_from_hid_report(hid_report);
                                 i = i.wrapping_add(1);
                             }
                         }
@@ -274,20 +274,15 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                         .read_characteristic(&battery_level_characteristic, &mut data)
                         .await
                         .unwrap();
-                    esp_println::println!("battery level: {}", data[0]);
+                    pilot_controller::update_battery(data[0]);
                     'outer: loop {
                         let fut = battery_listener.next();
                         match select(async { cancel_signal.changed().await }, fut).await {
                             Either::First(_) => {
-                                esp_println::println!("cancelling battery");
                                 break 'outer;
                             }
                             Either::Second(notification) => {
-                                esp_println::println!(
-                                    "Got notification: {:?} (val: {})",
-                                    notification.as_ref(),
-                                    notification.as_ref()[0]
-                                );
+                                pilot_controller::update_battery(notification.as_ref()[0]);
                             }
                         }
                     }
@@ -298,6 +293,7 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                         if !conn.is_connected() {
                             esp_println::println!("Connection lost!");
                             cancel_sender.send(());
+                            pilot_controller::update_connected(false);
                             break;
                         }
                         Timer::after(Duration::from_secs(2)).await;

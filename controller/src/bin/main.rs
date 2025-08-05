@@ -43,6 +43,7 @@ async fn main(spawner: Spawner) {
     let peripherals = esp_hal::init(config);
 
     esp_alloc::heap_allocator!(size: 64 * 1024);
+    
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
@@ -87,6 +88,7 @@ async fn main(spawner: Spawner) {
     spawner.spawn(input::run(local_wifi, peripherals.BT)).unwrap();
 
     spawner.spawn(gui::run(atomic_device, rst, dc)).unwrap();
+    
 
     loop {
 
