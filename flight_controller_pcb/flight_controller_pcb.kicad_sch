@@ -9423,7 +9423,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0201_0603Metric"
 			(at 229.5652 386.08 0)
 			(effects
 				(font
@@ -9441,7 +9441,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
+		(property "Description" "Unpolarized capacitor (C180283)"
 			(at 228.6 382.27 0)
 			(effects
 				(font
@@ -9550,7 +9550,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10"
 			(at 95.25 105.41 90)
 			(effects
 				(font
@@ -9558,7 +9558,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 95.25 110.998 90)
 			(effects
 				(font
@@ -9576,7 +9576,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor"
+		(property "Description" "Resistor (C25077)"
 			(at 95.25 109.22 0)
 			(effects
 				(font
@@ -9855,7 +9855,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "TestPoint:TestPoint_Pad_3.0x3.0mm"
 			(at 290.83 383.54 0)
 			(effects
 				(font
@@ -9922,7 +9922,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
 			(at 77.1652 50.8 0)
 			(effects
 				(font
@@ -9940,7 +9940,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
+		(property "Description" "Unpolarized capacitor (C52923)"
 			(at 76.2 46.99 0)
 			(effects
 				(font
@@ -10058,7 +10058,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 112.0648 135.89 0)
 			(effects
 				(font
@@ -10076,7 +10076,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor (MLCC, low ERS < 1ohm)"
+		(property "Description" "Unpolarized capacitor (C107368)"
 			(at 113.03 139.7 0)
 			(effects
 				(font
@@ -11370,7 +11370,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 95.25 99.568 90)
 			(effects
 				(font
@@ -11388,7 +11388,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor"
+		(property "Description" "Resistor (C163455)"
 			(at 95.25 97.79 0)
 			(effects
 				(font
@@ -11440,7 +11440,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 162.052 379.73 90)
 			(effects
 				(font
@@ -11458,7 +11458,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor"
+		(property "Description" "Resistor (C11702)"
 			(at 163.83 379.73 0)
 			(effects
 				(font
@@ -11649,7 +11649,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "10nF"
 			(at 224.79 341.63 90)
 			(effects
 				(font
@@ -11657,7 +11657,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 228.6 345.7448 0)
 			(effects
 				(font
@@ -11675,7 +11675,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
+		(property "Description" "Unpolarized capacitor (C389113)"
 			(at 224.79 346.71 0)
 			(effects
 				(font
@@ -12030,7 +12030,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 104.902 73.66 90)
 			(effects
 				(font
@@ -12048,7 +12048,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor"
+		(property "Description" "Resistor (C25744)"
 			(at 106.68 73.66 0)
 			(effects
 				(font
@@ -12769,7 +12769,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0201_0603Metric"
 			(at 128.27 375.92 0)
 			(effects
 				(font
@@ -12787,7 +12787,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Inductor (chip inductor +/- 5%)"
+		(property "Description" "Inductor (C98043)"
 			(at 128.27 375.92 0)
 			(effects
 				(font
@@ -14463,7 +14463,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_0201_0603Metric"
 			(at 128.27 368.3 0)
 			(effects
 				(font
@@ -14481,7 +14481,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Inductor"
+		(property "Description" "Inductor (C918993)"
 			(at 128.27 368.3 0)
 			(effects
 				(font
@@ -14802,7 +14802,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
 			(at 152.0952 368.3 0)
 			(effects
 				(font
@@ -14820,7 +14820,16 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor (NPO, +/- 0.1pF)"
+		(property "Description" "Unpolarized capacitor (C309455)"
+			(at 151.13 364.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Field5" ""
 			(at 151.13 364.49 0)
 			(effects
 				(font
@@ -15349,7 +15358,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
 			(at 142.24 367.3348 0)
 			(effects
 				(font
@@ -15367,7 +15376,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor (NPO, +/- 0.1pF)"
+		(property "Description" "Unpolarized capacitor (C282238)"
 			(at 138.43 368.3 0)
 			(effects
 				(font
@@ -15761,7 +15770,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10"
 			(at 95.25 115.57 90)
 			(effects
 				(font
@@ -15769,7 +15778,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 95.25 121.158 90)
 			(effects
 				(font
@@ -15787,7 +15796,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor"
+		(property "Description" "Resistor (C25077)"
 			(at 95.25 119.38 0)
 			(effects
 				(font
@@ -15839,7 +15848,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
 			(at 88.5952 50.8 0)
 			(effects
 				(font
@@ -15857,7 +15866,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
+		(property "Description" "Unpolarized capacitor (C15195)"
 			(at 87.63 46.99 0)
 			(effects
 				(font
@@ -16067,7 +16076,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Inductor (C76778)"
+		(property "Description" "Inductor (C404576)"
 			(at 114.3 372.11 0)
 			(effects
 				(font
@@ -16185,7 +16194,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 155.702 387.35 90)
 			(effects
 				(font
@@ -16203,7 +16212,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor"
+		(property "Description" "Resistor (C11702)"
 			(at 157.48 387.35 0)
 			(effects
 				(font
@@ -16887,7 +16896,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "220pF"
 			(at 224.79 354.33 90)
 			(effects
 				(font
@@ -16895,7 +16904,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
 			(at 228.6 358.4448 0)
 			(effects
 				(font
@@ -16913,7 +16922,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
+		(property "Description" "Unpolarized capacitor (C326765)"
 			(at 224.79 359.41 0)
 			(effects
 				(font
@@ -16955,7 +16964,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "1uF"
 			(at 224.79 327.66 90)
 			(effects
 				(font
@@ -16963,7 +16972,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
 			(at 228.6 331.7748 0)
 			(effects
 				(font
@@ -16981,7 +16990,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
+		(property "Description" "Unpolarized capacitor (C52923)"
 			(at 224.79 332.74 0)
 			(effects
 				(font
