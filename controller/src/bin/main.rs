@@ -7,7 +7,7 @@
 )]
 
 extern crate alloc;
-use controller::{gui, input};
+use controller::{gui, input, radio, rx};
 use core::mem::ManuallyDrop;
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -47,7 +47,7 @@ async fn main(spawner: Spawner) {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
 
-    esp_println::println!("Init WIFI");
+    esp_println::println!("Init WIFI!");
     let wifi_init = esp_wifi::init(
             timg0.timer0,
             esp_hal::rng::Rng::new(peripherals.RNG))
@@ -64,30 +64,52 @@ async fn main(spawner: Spawner) {
     let mosi = peripherals.GPIO38;
     let miso = peripherals.GPIO39;
 
-    let cs = Output::new(peripherals.GPIO36, Level::Low, OutputConfig::default());
-    let rst = Output::new(peripherals.GPIO19, Level::Low, OutputConfig::default());
-    let dc = Output::new(peripherals.GPIO35, Level::Low, OutputConfig::default());
 
     let spi = Spi::new(
         peripherals.SPI2,
         Config::default()
             .with_frequency(Rate::from_mhz(4))
-            .with_mode(Mode::_3),
+            .with_mode(Mode::_0),
     ).unwrap()
         .with_sck(sclk)
         .with_mosi(mosi)
         .with_miso(miso)
         .into_async();
-
     let shared_bus = AtomicCell::new(spi);
     let shared_bus = ManuallyDrop::new(shared_bus);
     let local_shared_bus:  &'static AtomicCell<Spi<Async>> = unsafe { core::mem::transmute(&shared_bus) };
 
-    let atomic_device = AtomicDevice::new(local_shared_bus, cs, Delay::new()).unwrap();
+    let display_cs = Output::new(peripherals.GPIO36, Level::High, OutputConfig::default());
+    let display_rst = Output::new(peripherals.GPIO19, Level::Low, OutputConfig::default());
+    let display_dc = Output::new(peripherals.GPIO35, Level::Low, OutputConfig::default());
+    let display_device = AtomicDevice::new(local_shared_bus, display_cs, Delay::new()).unwrap();
 
-    spawner.spawn(input::run(local_wifi, peripherals.BT)).unwrap();
 
-    spawner.spawn(gui::run(atomic_device, rst, dc)).unwrap();
+    let rx_cs = Output::new(peripherals.GPIO12, Level::Low, OutputConfig::default());
+    let rx_ce = Output::new(peripherals.GPIO11, Level::Low, OutputConfig::default());
+    let rx_device = AtomicDevice::new(local_shared_bus, rx_cs, Delay::new()).unwrap();
+
+    let mut radio_csn = Output::new(peripherals.GPIO14, Level::High, OutputConfig::default());
+    let radio_ce = Output::new(peripherals.GPIO13, Level::Low, OutputConfig::default());
+    let radio_device = AtomicDevice::new(local_shared_bus, radio_csn, Delay::new()).unwrap();
+
+    //spawner.spawn(input::run(local_wifi, peripherals.BT)).unwrap();
+    spawner.spawn(gui::run(display_device, display_rst, display_dc)).unwrap();
+    spawner.spawn(rx::run(rx_device, rx_ce)).unwrap();
+    spawner.spawn(radio::run(radio_device, radio_ce)).unwrap();
+
+    /*esp_println::println!("CSN is high? {}", radio_csn.is_set_high());
+    radio_csn.set_low();
+    Timer::after(Duration::from_millis(10)).await;
+    esp_println::println!("CSN is high? {}", radio_csn.is_set_high());
+    let mut buf = [0xFFu8; 1];
+    spi.transfer(&mut buf).unwrap();
+    Timer::after(Duration::from_millis(10)).await;
+    radio_csn.set_high();
+    Timer::after(Duration::from_millis(10)).await;
+    esp_println::println!("CSN is high? {}", radio_csn.is_set_high());
+    esp_println::println!("Received?? {}", buf[0]);*/
+
     
 
     loop {
