@@ -12,7 +12,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="deafb433-f97e-4e27-b5de-06f9c9136bb1" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../controller/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/src/bin/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/bin/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/input/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/input/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/input/pilot_controller.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/input/pilot_controller.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/radio/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/radio/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/rx/mod.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../datasheets/nRF24L01P_PS_v1.0.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/../datasheets/nRF24L01P_PS_v1.0.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/radio/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/radio/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../flight_controller_pcb/flight_controller_pcb.kicad_sch" beforeDir="false" afterPath="$PROJECT_DIR$/../flight_controller_pcb/flight_controller_pcb.kicad_sch" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -109,7 +122,7 @@
       <option name="presentableId" value="Default" />
       <updated>1754640338999</updated>
       <workItem from="1754640340068" duration="9204000" />
-      <workItem from="1754729037564" duration="14319000" />
+      <workItem from="1754729037564" duration="40036000" />
     </task>
     <servers />
   </component>

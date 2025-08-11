@@ -1,0 +1,8 @@
+[package]
+name = "fc-common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+zerocopy = {version = "0.8.26", features = ["derive"]}
+defmt = "1.0.1"

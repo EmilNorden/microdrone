@@ -40,8 +40,10 @@ heapless = "0.8"
 ssd1351 = "0.5.0"
 embedded-graphics = { version = "0.8.1"}
 tinyui = { git = "https://github.com/EmilNorden/rust-tinyui.git" }
-nrf24-rs = "0.2.0"
-# embedded-nrf24l01-async = "0.3.1"
+# nrf24-rs = "0.2.0"
+nrf24-rs = { path = "../../RF24-rs" }
+fc-common = { path = "../fc-common" }
+zerocopy = "0.8.26"
 
 [profile.dev]
 # Rust debug is too slow.

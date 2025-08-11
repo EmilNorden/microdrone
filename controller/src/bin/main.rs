@@ -7,7 +7,7 @@
 )]
 
 extern crate alloc;
-use controller::{gui, input, radio, rx};
+use controller::{gui, input, radio};
 use core::mem::ManuallyDrop;
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -24,6 +24,8 @@ use esp_hal::{
     Async,
     delay::Delay,
 };
+use esp_hal::gpio::{Input, InputConfig, Pull};
+use esp_hal::interrupt::software::SoftwareInterruptControl;
 use esp_wifi::EspWifiController;
 
 #[panic_handler]
@@ -84,19 +86,14 @@ async fn main(spawner: Spawner) {
     let display_dc = Output::new(peripherals.GPIO35, Level::Low, OutputConfig::default());
     let display_device = AtomicDevice::new(local_shared_bus, display_cs, Delay::new()).unwrap();
 
-
-    let rx_cs = Output::new(peripherals.GPIO12, Level::Low, OutputConfig::default());
-    let rx_ce = Output::new(peripherals.GPIO11, Level::Low, OutputConfig::default());
-    let rx_device = AtomicDevice::new(local_shared_bus, rx_cs, Delay::new()).unwrap();
-
     let mut radio_csn = Output::new(peripherals.GPIO14, Level::High, OutputConfig::default());
     let radio_ce = Output::new(peripherals.GPIO13, Level::Low, OutputConfig::default());
     let radio_device = AtomicDevice::new(local_shared_bus, radio_csn, Delay::new()).unwrap();
+    let radio_irq = Input::new(peripherals.GPIO12, InputConfig::default().with_pull(Pull::Up));
 
-    //spawner.spawn(input::run(local_wifi, peripherals.BT)).unwrap();
+    spawner.spawn(input::run(local_wifi, peripherals.BT)).unwrap();
     spawner.spawn(gui::run(display_device, display_rst, display_dc)).unwrap();
-    spawner.spawn(rx::run(rx_device, rx_ce)).unwrap();
-    spawner.spawn(radio::run(radio_device, radio_ce)).unwrap();
+    spawner.spawn(radio::run(radio_device, radio_ce, radio_irq)).unwrap();
 
     /*esp_println::println!("CSN is high? {}", radio_csn.is_set_high());
     radio_csn.set_low();

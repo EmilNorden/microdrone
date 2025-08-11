@@ -9349,6 +9349,16 @@
 		)
 		(uuid "5e3f05ae-5898-4f04-8da5-8ad7cf777b7d")
 	)
+	(label "NRF24_CE"
+		(at 123.19 120.65 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "5f7d9864-20a2-42c6-81f6-fbc0661da69d")
+	)
 	(label "SPI1_SCK"
 		(at 234.95 134.62 180)
 		(effects

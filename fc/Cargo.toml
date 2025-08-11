@@ -14,8 +14,15 @@ cortex-m-rt = { version = "0.7.5"}
 panic-probe = { version = "1.0.0", features = ["print-defmt"]}
 stm32f4xx-hal = { version = "0.22.1", features = ["stm32f411"]}
 
-nrf24-rs = "0.2.0"
+# nrf24-rs = "0.2.0"
+nrf24-rs = { path = "../../RF24-rs" }
+embedded-nrf24l01-async = "0.3.1"
 embedded-hal-bus = "0.3.0"
+embassy-embedded-hal = {version = "0.4.0" }
+embassy-sync = { version = "0.7.0" }
+static_cell = "2.1.1"
+fc-common = { path = "../fc-common" }
+zerocopy = "0.8.26"
 
 [patch.crates-io]
 embassy-time = { git = "https://github.com/embassy-rs/embassy", rev = "76e369b8aa5641b6f3f4440824f559def6cf6192" }

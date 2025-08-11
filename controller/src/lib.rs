@@ -4,4 +4,3 @@ extern crate alloc;
 pub mod input;
 pub mod gui;
 pub mod radio;
-pub mod rx;
