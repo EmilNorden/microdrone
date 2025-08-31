@@ -7,10 +7,11 @@ use esp_hal::delay::Delay;
 use esp_hal::gpio::{Event, Input, Output};
 use esp_hal::spi::master::Spi;
 use esp_hal::Async;
-use fc_common::FlightInput;
+use fc_common::{FlightInput, FLIGHT_INPUT_SIZE};
 use nrf24_rs::config::{NrfConfig, PALevel, PayloadSize};
 use nrf24_rs::{Nrf24l01, MAX_PAYLOAD_SIZE};
 use zerocopy::{IntoBytes};
+use crate::input;
 
 #[embassy_executor::task]
 pub async fn run(
@@ -18,12 +19,11 @@ pub async fn run(
     ce: Output<'static>,
     mut irq: Input<'static>
 ) {
-    const { assert!(size_of::<FlightInput>() < MAX_PAYLOAD_SIZE as usize, "FlightInput size exceeds max payload size"); }
+    const { assert!(FLIGHT_INPUT_SIZE < MAX_PAYLOAD_SIZE as usize, "FlightInput size exceeds max payload size"); }
 
     irq.listen(Event::FallingEdge);
 
     esp_println::println!("TX Radio init");
-    let message = b"Ping!";
     let config = NrfConfig::default()
         .channel(8)               
         .pa_level(PALevel::Min)
@@ -54,8 +54,9 @@ pub async fn run(
     loop {
         ticker.next().await;
         radio.reset_status().unwrap();
+        let input: FlightInput = input::get_input_state().into();
 
-        match radio.write(&mut delay, message) {
+        match radio.write(&mut delay, input.as_bytes()) {
             Ok(_) => {
                 match select(
                     async { Timer::after(Duration::from_millis(1000)).await },
@@ -72,6 +73,7 @@ pub async fn run(
                             esp_println::println!("MAX_RT");
                             radio.reset_status().unwrap();
                         } else {
+                            input::reset_buttons_latch();
                             esp_println::println!(
                                 "data sent: {} data ready: {} - ",
                                 status.data_sent(),
