@@ -6960,10 +6960,6 @@
 		(uuid "1ec5cb6a-7c72-41a3-961e-8fc64948d649")
 	)
 	(no_connect
-		(at 275.59 139.7)
-		(uuid "487c3f2f-ec96-405f-8e90-866fa860c5d0")
-	)
-	(no_connect
 		(at 220.98 68.58)
 		(uuid "9b169ef8-e4e3-4b9e-833e-a28f4ac9668f")
 	)
@@ -7048,6 +7044,16 @@
 			(type default)
 		)
 		(uuid "07e48fd0-496e-4375-9239-354c849fbb22")
+	)
+	(wire
+		(pts
+			(xy 280.67 151.13) (xy 278.13 151.13)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "08341216-8018-4fb3-ad5f-12e18a77b17d")
 	)
 	(wire
 		(pts
@@ -7821,7 +7827,7 @@
 	)
 	(wire
 		(pts
-			(xy 275.59 149.86) (xy 280.67 149.86)
+			(xy 275.59 156.21) (xy 280.67 156.21)
 		)
 		(stroke
 			(width 0)
@@ -8078,6 +8084,16 @@
 			(type default)
 		)
 		(uuid "8cdddc0b-13a2-4e09-b1ea-32a11feed4c4")
+	)
+	(wire
+		(pts
+			(xy 278.13 139.7) (xy 275.59 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8e0a6b86-515f-4505-a9ea-e8e3fd289905")
 	)
 	(wire
 		(pts
@@ -8491,6 +8507,16 @@
 	)
 	(wire
 		(pts
+			(xy 278.13 151.13) (xy 278.13 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bb431618-0b63-4cfe-9cfa-510cb277ca48")
+	)
+	(wire
+		(pts
 			(xy 275.59 53.34) (xy 274.32 53.34)
 		)
 		(stroke
@@ -8671,7 +8697,7 @@
 	)
 	(wire
 		(pts
-			(xy 275.59 142.24) (xy 275.59 149.86)
+			(xy 275.59 142.24) (xy 275.59 156.21)
 		)
 		(stroke
 			(width 0)
@@ -9149,6 +9175,16 @@
 		)
 		(uuid "0d83d4d3-7c21-4b88-b459-ae61328ef781")
 	)
+	(label "BMP390_IRQ"
+		(at 123.19 107.95 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "1ea98611-589c-4aff-9487-f28a3bb8179d")
+	)
 	(label "SPI1_SCK"
 		(at 165.1 77.47 0)
 		(effects
@@ -9250,7 +9286,7 @@
 		(uuid "361b2742-00e6-43d4-8db0-3ae85878b8f8")
 	)
 	(label "BMP390_CS"
-		(at 280.67 149.86 0)
+		(at 280.67 156.21 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -9678,6 +9714,16 @@
 			(justify left bottom)
 		)
 		(uuid "f4784db7-6f50-4c32-8753-8d00f385685d")
+	)
+	(label "BMP390_IRQ"
+		(at 280.67 151.13 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f720243a-29cb-4847-ab57-83d1e63c75f6")
 	)
 	(label "SWDIO"
 		(at 165.1 72.39 0)
