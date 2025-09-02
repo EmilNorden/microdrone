@@ -29,10 +29,10 @@ pub async fn run(
         .pa_level(PALevel::Min)
         .payload_size(PayloadSize::Dynamic)
         .ack_payloads_enabled(true);
-
+    
 
     let mut delay = Delay::new();
-    let mut radio = match Nrf24l01::new(spi_device, ce, &mut delay, config) {
+    let mut radio = match Nrf24l01::new_blocking(spi_device, ce, &mut delay, config) {
         Ok(radio) => radio,
         Err(e) => {
             esp_println::println!("NRF24 Error : {:?}", e);
