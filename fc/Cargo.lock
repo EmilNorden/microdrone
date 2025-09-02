@@ -75,6 +75,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bmp390-rs"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b526f5e7f08d27150f2cc310d986bef10b6eb4ca960a84f69ff53c7478c76c0"
+dependencies = [
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "heapless",
+]
+
+[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -199,16 +210,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10d60334b3b2e7c9d91ef8150abfb6fa4c1c39ebbcf4a81c2e346aad939fee3e"
 dependencies = [
  "thiserror",
-]
-
-[[package]]
-name = "defmt-rtt"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6eca0aae8aa2cf8333200ecbd236274697bc0a394765c858b3d9372eb1abcfa"
-dependencies = [
- "critical-section",
- "defmt 0.3.100",
 ]
 
 [[package]]
@@ -548,21 +549,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "embedded-nrf24l01-async"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aa240c785f53d343af18709a1374f3b000ed92fc7bc3766aff86a6860eea530"
-dependencies = [
- "bitfield",
- "defmt 0.3.100",
- "defmt-rtt 0.4.2",
- "embedded-hal 1.0.0",
- "embedded-hal-async",
- "log",
- "nb 0.1.3",
-]
-
-[[package]]
 name = "embedded-storage"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -601,18 +587,19 @@ dependencies = [
 name = "fc"
 version = "0.1.0"
 dependencies = [
+ "bmp390-rs",
  "cortex-m",
  "cortex-m-rt",
  "defmt 1.0.1",
- "defmt-rtt 1.0.0",
+ "defmt-rtt",
  "embassy-embedded-hal 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embassy-executor",
  "embassy-stm32",
  "embassy-sync 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embassy-time",
  "embedded-hal-bus",
- "embedded-nrf24l01-async",
  "fc-common",
+ "libm",
  "nrf24-rs",
  "panic-probe",
  "static_cell",
@@ -715,16 +702,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
+name = "libm"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
+
+[[package]]
 name = "litrs"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5e54036fe321fd421e10d732f155734c4e4afd610dd556d9a82833ab3ee0bed"
-
-[[package]]
-name = "log"
-version = "0.4.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "nb"
@@ -746,6 +733,7 @@ name = "nrf24-rs"
 version = "0.2.0"
 dependencies = [
  "embedded-hal 1.0.0",
+ "embedded-hal-async",
 ]
 
 [[package]]

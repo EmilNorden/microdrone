@@ -2,6 +2,7 @@
 #![no_main]
 
 mod radio;
+mod env;
 
 use core::mem::ManuallyDrop;
 use defmt::*;
@@ -33,7 +34,7 @@ async fn main(spawner: Spawner) {
     let mut spi_config = Config::default();
     spi_config.frequency = Hertz(1_000_000);
 
-    /*let spi = Spi::new(p.SPI1, p.PA5, p.PA7, p.PA6, p.DMA2_CH3, p.DMA2_CH2, spi_config);
+    let spi = Spi::new(p.SPI1, p.PA5, p.PA7, p.PA6, p.DMA2_CH3, p.DMA2_CH2, spi_config);
     let spi_bus = Mutex::new(spi);
     let spi_bus = SPI_BUS.init(spi_bus);
 
@@ -42,21 +43,14 @@ async fn main(spawner: Spawner) {
     let radio_device = SpiDevice::new(spi_bus, radio_cs);
 
     let radio_ce = Output::new(p.PB12, Level::High, Speed::Low);
-    spawner.spawn(radio::run(radio_device, radio_ce)).unwrap();*/
-
-
-    let spi = Spi::new_blocking(p.SPI1, p.PA5, p.PA7, p.PA6, spi_config);
-    let shared_bus = AtomicCell::new(spi);
-    let shared_bus = ManuallyDrop::new(shared_bus);
-    let local_shared_bus:  &'static AtomicCell<Spi<Async>> = unsafe { core::mem::transmute(&shared_bus) };
-
-    let radio_cs = Output::new(p.PB13, Level::High, Speed::Low);
-    let radio_ce = Output::new(p.PB12, Level::High, Speed::Low);
     let radio_irq = ExtiInput::new(p.PB1, p.EXTI1, Pull::Up);
-    let radio_device = AtomicDevice::new(local_shared_bus, radio_cs, Delay{}).unwrap();
+    spawner.spawn(radio::run(radio_device, radio_ce, radio_irq)).unwrap();
 
-   spawner.spawn(radio::run(radio_device, radio_ce, radio_irq)).unwrap();
-
+    let bmp390_cs = Output::new(p.PB14, Level::High, Speed::Low);
+    let bmp390_device = SpiDevice::new(spi_bus, bmp390_cs);
+    let bmp390_irq = ExtiInput::new(p.PB6, p.EXTI6, Pull::Up);
+    //spawner.spawn(env::run(bmp390_device, bmp390_irq)).unwrap();
+    //spawner.spawn(env::run(bmp390_device)).unwrap();
 
     info!("Flight controller started!");
     loop {
