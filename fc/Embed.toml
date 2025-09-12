@@ -1,0 +1,5 @@
+[default.general]
+chip = "STM32F411CE"
+
+[default.rtt]
+enabled = true

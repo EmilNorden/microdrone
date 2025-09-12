@@ -6,27 +6,30 @@
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
       <package file="$PROJECT_DIR$">
-        <enabledFeature name="default" />
+        <feature name="default" enabled="true" />
       </package>
     </cargoProject>
   </component>
   <component name="ChangeListManager">
     <list default="true" id="deafb433-f97e-4e27-b5de-06f9c9136bb1" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/src/bin/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/bin/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/gui/battery_indicator.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/gui/battery_indicator.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/gui/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/gui/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/input/gamepad.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/input/gamepad.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/src/input/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/input/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/src/input/pilot_controller.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/input/pilot_controller.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/lib.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../controller/src/radio/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/radio/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../controller/src/rx/mod.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../datasheets/nRF24L01P_PS_v1.0.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/../datasheets/nRF24L01P_PS_v1.0.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../controller/src/radio/state.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../controller/src/radio/state.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/env/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/env/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/radio/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/radio/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../flight_controller_pcb/flight_controller_pcb.kicad_sch" beforeDir="false" afterPath="$PROJECT_DIR$/../flight_controller_pcb/flight_controller_pcb.kicad_sch" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,6 +65,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/emilnorden/code/microdrone/fc&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -71,6 +75,7 @@
     &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
     &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
     &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -122,7 +127,11 @@
       <option name="presentableId" value="Default" />
       <updated>1754640338999</updated>
       <workItem from="1754640340068" duration="9204000" />
-      <workItem from="1754729037564" duration="40036000" />
+      <workItem from="1754729037564" duration="48945000" />
+      <workItem from="1755415173109" duration="3224000" />
+      <workItem from="1755764605833" duration="7386000" />
+      <workItem from="1756630437469" duration="11097000" />
+      <workItem from="1756806295628" duration="46066000" />
     </task>
     <servers />
   </component>

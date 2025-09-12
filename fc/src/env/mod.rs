@@ -35,7 +35,6 @@ pub async fn run(
         .await
         .unwrap();
 
-
     let initial_measurement = device.read_measurement().await.unwrap();
     let reference_pressure = initial_measurement.pressure_pascal();
 
