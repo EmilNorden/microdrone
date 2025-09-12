@@ -1,4 +1,8 @@
 #![no_std]
+
+mod telemetry;
+pub use telemetry::Telemetry;
+
 use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 #[derive(IntoBytes, FromBytes, Immutable)]
@@ -30,7 +34,7 @@ impl defmt::Format for FlightInput {
     }
 }
 
-#[derive(IntoBytes, FromBytes, Immutable)]
+#[derive(IntoBytes, FromBytes, Immutable, Debug)]
 #[repr(C, packed)]
 pub struct DroneStatus {
     pub battery_level: u8,
