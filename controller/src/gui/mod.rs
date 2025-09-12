@@ -1,35 +1,36 @@
 mod battery_indicator;
 
-use crate::input::{get_controller_state, get_input_state};
 use alloc::format;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt::Debug;
 use core::str::FromStr;
-use embassy_time::{Duration, Timer};
-use embedded_graphics::{
-    mono_font::ascii::FONT_6X10,
-    mono_font::MonoTextStyle,
-    pixelcolor::Rgb565,
-    prelude::*,
-    primitives::{PrimitiveStyleBuilder, Rectangle},
-    text::Text,
-};
+
+use embedded_graphics::mono_font::ascii::FONT_6X10;
+use embedded_graphics::mono_font::MonoTextStyle;
+use embedded_graphics::pixelcolor::Rgb565;
+use embedded_graphics::prelude::*;
+use embedded_graphics::primitives::{PrimitiveStyleBuilder, Rectangle};
+use embedded_graphics::text::Text;
 use embedded_hal_bus::spi::AtomicDevice;
-use esp_hal::{delay::Delay, gpio::Output, spi::master::Spi, Async};
-use ssd1351::{
-    mode::GraphicsMode, prelude::SPIInterface, properties::DisplayRotation,
-    properties::DisplaySize::Display128x128,
-};
+use esp_hal::delay::Delay;
+use esp_hal::gpio::Output;
+use esp_hal::spi::master::Spi;
+use esp_hal::Async;
+use ssd1351::mode::GraphicsMode;
+use ssd1351::prelude::SPIInterface;
+use ssd1351::properties::DisplayRotation;
+use ssd1351::properties::DisplaySize::Display128x128;
 use tinyui::component::Component;
-use tinyui::context::Context;
-use tinyui::frame::Frame;
+
+use crate::telemetry::BatteryTelemetry;
 
 #[embassy_executor::task]
 pub async fn run(
     spi_device: AtomicDevice<'static, Spi<'static, Async>, Output<'static>, Delay>,
     mut rst: Output<'static>,
     dc: Output<'static>,
+    mut battery_telemetry: BatteryTelemetry,
 ) {
     let interface = SPIInterface::new(spi_device, dc);
 
@@ -51,49 +52,15 @@ pub async fn run(
 
     let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
     let mut ctrl_status_label: Label<'_, _, 15> =
-        Label::new(
-            "Not connected",
-            style,
-            Point::new(10, 10),
-            Rgb565::BLACK,
-        )
-        .unwrap();
+        Label::new("Not connected", style, Point::new(10, 10), Rgb565::BLACK).unwrap();
 
     let mut throttle_indicator = Rc::new(RefCell::new(ThrottleIndicator::new(Rgb565::GREEN)));
 
-    /*let mut ctx = Context::new(display);
-    let mut frame = Frame::new(Rgb565::BLACK);
-    frame.add_component(ctrl_status_label.clone());
-    //frame.add_component(throttle_indicator);
-    ctx.set_frame(frame);*/
-
     loop {
-        let input_state = get_input_state();
-        let controller_state = get_controller_state();
-
-        if controller_state.connected {
-            /*let mut mut_borrow = ctrl_status_label.borrow_mut();
-            mut_borrow
-                .set_text(&format!("{}%", controller_state.battery))
-                .unwrap();*/
-            //draw_battery_level(&mut display, style, controller_state.battery);
-
-            ctrl_status_label
-                .set_text(&format!("{}%", controller_state.battery))
-                .unwrap();
-
-        } else {
-            /*let mut mut_borrow = ctrl_status_label.borrow_mut();
-            mut_borrow.set_text("Not connected").unwrap();*/
-
-            ctrl_status_label
-                .set_text("Not connected")
-                .unwrap();
-        }
-
-        //ctx.draw().unwrap();
         ctrl_status_label.draw(&mut display).unwrap();
-        Timer::after(Duration::from_millis(200)).await;
+
+        let (ts, battery) = battery_telemetry.next_value().await;
+        ctrl_status_label.set_text(&format!("{}%", battery.level)).unwrap();
     }
 }
 
@@ -112,12 +79,7 @@ where
     C: PixelColor,
 {
     type Err = ();
-    fn new(
-        text: &str,
-        style: MonoTextStyle<'a, C>,
-        position: Point,
-        background_color: C,
-    ) -> Result<Self, Self::Err> {
+    fn new(text: &str, style: MonoTextStyle<'a, C>, position: Point, background_color: C) -> Result<Self, Self::Err> {
         let text = heapless::String::from_str(text)?;
         let size = Self::calculate_size(&text, &style);
         let clear_area = Rectangle::new(position, size);
@@ -176,13 +138,10 @@ where
 
         Text::new(
             self.text.as_str(),
-            Point::new(
-                self.position.x,
-                self.position.y + self.size.height as i32 - 1,
-            ),
+            Point::new(self.position.x, self.position.y + self.size.height as i32 - 1),
             self.style,
         )
-            .draw(target)?;
+        .draw(target)?;
 
         self.needs_redraw = false;
 
@@ -206,7 +165,7 @@ where
         Self {
             needs_redraw: false,
             throttle: 0,
-            color
+            color,
         }
     }
     pub fn set_throttle(&mut self, throttle: u8) {
@@ -215,7 +174,6 @@ where
             self.needs_redraw = true;
         }
     }
-
 }
 
 impl<C> Component<C> for ThrottleIndicator<C>

@@ -1,10 +1,12 @@
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+
 use fc_common::FlightInput;
+
 use crate::input::gamepad::HIDReport;
 
 pub struct ControllerState<B, U> {
     pub connected: B,
-    pub battery: U
+    pub battery: U,
 }
 
 type ControllerStateAtomic = ControllerState<AtomicBool, AtomicU8>;
@@ -35,7 +37,7 @@ impl Into<FlightInput> for PilotInputState<u8> {
             right_stick_y: self.right_stick_y,
             left_trigger: self.left_trigger,
             right_trigger: self.right_trigger,
-            buttons: self.buttons_latch
+            buttons: self.buttons_latch,
         }
     }
 }

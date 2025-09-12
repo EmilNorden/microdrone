@@ -1,11 +1,12 @@
 use core::fmt::Debug;
+
 use bt_hci::controller::ExternalController;
 use bt_hci::param::{AddrKind, BdAddr};
 use embassy_futures::join::{join, join3};
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::watch::Watch;
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Instant, Timer};
 use esp_hal::efuse::Efuse;
 use esp_wifi::ble::controller::BleConnector;
 use esp_wifi::EspWifiController;
@@ -15,7 +16,9 @@ use trouble_host::connection::{ConnectConfig, ScanConfig};
 use trouble_host::gatt::GattClient;
 use trouble_host::prelude::DefaultPacketPool;
 use trouble_host::{Address, Controller, Host, HostResources};
+
 use crate::input::pilot_controller;
+use crate::telemetry::{BatterySender, ControllerBattery, ControllerInput, InputSender};
 
 pub struct HIDReport {
     pub dpad: u8,
@@ -28,6 +31,20 @@ pub struct HIDReport {
     pub buttons: u8,
 }
 
+impl Into<ControllerInput> for HIDReport {
+    fn into(self) -> ControllerInput {
+        ControllerInput {
+            left_stick_x: self.left_stick_x,
+            left_stick_y: self.left_stick_y,
+            right_stick_x: self.right_stick_x,
+            right_stick_y: self.right_stick_y,
+            left_trigger: self.left_trigger,
+            right_trigger: self.right_trigger,
+            buttons: self.buttons,
+        }
+    }
+}
+
 pub enum GamepadButton {
     A,
     B,
@@ -36,7 +53,7 @@ pub enum GamepadButton {
     LB,
     RB,
     L4,
-    R4
+    R4,
 }
 
 impl HIDReport {
@@ -100,16 +117,19 @@ fn get_bluetooth_mac_address() -> [u8; 6] {
     base_mac
 }
 
-pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::peripherals::BT<'static>) {
-
+pub async fn run(
+    wifi: &'static EspWifiController<'static>,
+    bt: esp_hal::peripherals::BT<'static>,
+    battery_sender: BatterySender,
+    input_sender: InputSender,
+) {
     esp_println::println!("Init Bluetooth...");
     let transport = BleConnector::new(wifi, bt);
     let ble_controller = ExternalController::<_, 20>::new(transport);
 
     let address: Address = Address::random(get_bluetooth_mac_address());
 
-    let mut resources: HostResources<DefaultPacketPool, CONNECTIONS_MAX, L2CAP_CHANNELS_MAX> =
-        HostResources::new();
+    let mut resources: HostResources<DefaultPacketPool, CONNECTIONS_MAX, L2CAP_CHANNELS_MAX> = HostResources::new();
     let stack = trouble_host::new(ble_controller, &mut resources).set_random_address(address);
 
     let Host {
@@ -189,15 +209,10 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
             let _ = join(client_task, async {
                 esp_println::println!("Looking for hid service");
 
-                let hid_services = client
-                    .services_by_uuid(&Uuid::new_short(0x1812))
-                    .await
-                    .unwrap();
+                let hid_services = client.services_by_uuid(&Uuid::new_short(0x1812)).await.unwrap();
                 let hid_service = hid_services.first().unwrap().clone();
-                let all_characteristics: Vec<Characteristic<u8>, 20> = client
-                    .discover_all_characteristics(&hid_service)
-                    .await
-                    .unwrap();
+                let all_characteristics: Vec<Characteristic<u8>, 20> =
+                    client.discover_all_characteristics(&hid_service).await.unwrap();
 
                 let hid_report_index = discover_hid_report_characteristic(&client, &all_characteristics).await;
 
@@ -209,24 +224,15 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                 let hid_report_characteristic = &all_characteristics[hid_report_index.unwrap()];
 
                 esp_println::println!("Looking for battery service");
-                let battery_services = client
-                    .services_by_uuid(&Uuid::new_short(0x180f))
-                    .await
-                    .unwrap();
+                let battery_services = client.services_by_uuid(&Uuid::new_short(0x180f)).await.unwrap();
                 esp_println::println!("Found {} battery services", battery_services.len());
 
                 let battery_service = battery_services.first().unwrap().clone();
 
-                let all_characteristics: Vec<Characteristic<u8>, 10> = client
-                    .discover_all_characteristics(&battery_service)
-                    .await
-                    .unwrap();
+                let all_characteristics: Vec<Characteristic<u8>, 10> =
+                    client.discover_all_characteristics(&battery_service).await.unwrap();
                 for x in &all_characteristics {
-                    esp_println::println!(
-                        "battery characteristic: {:x?}, {:?}",
-                        x.uuid.as_raw(),
-                        x.cccd_handle
-                    )
+                    esp_println::println!("battery characteristic: {:x?}, {:?}", x.uuid.as_raw(), x.cccd_handle)
                 }
 
                 let battery_level_characteristic: Characteristic<u8> = client
@@ -234,18 +240,14 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                     .await
                     .unwrap();
 
-                let mut buttons_listener = client
-                    .subscribe(&hid_report_characteristic, true)
-                    .await
-                    .unwrap();
-                let mut battery_listener =
-                    match client.subscribe(&battery_level_characteristic, true).await {
-                        Ok(b) => b,
-                        Err(e) => {
-                            esp_println::println!("Error: {:?}", e);
-                            return;
-                        }
-                    };
+                let mut buttons_listener = client.subscribe(&hid_report_characteristic, true).await.unwrap();
+                let mut battery_listener = match client.subscribe(&battery_level_characteristic, true).await {
+                    Ok(b) => b,
+                    Err(e) => {
+                        esp_println::println!("Error: {:?}", e);
+                        return;
+                    }
+                };
 
                 let buttons = async {
                     let mut cancel_signal = cancel_watch.receiver().unwrap();
@@ -260,7 +262,9 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                             Either::Second(notification) => {
                                 let hid_report = HIDReport::from_raw(notification.as_ref());
                                 esp_println::println!("{} {:?}", i, hid_report);
-                                pilot_controller::update_from_hid_report(hid_report);
+                                //input_sender.send(ControllerInput)
+                                input_sender.send((Instant::now(), hid_report.into()));
+                                //pilot_controller::update_from_hid_report(hid_report);
                                 i = i.wrapping_add(1);
                             }
                         }
@@ -274,7 +278,8 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                         .read_characteristic(&battery_level_characteristic, &mut data)
                         .await
                         .unwrap();
-                    pilot_controller::update_battery(data[0]);
+                    battery_sender.send((Instant::now(), ControllerBattery { level: data[0] }));
+                    //pilot_controller::update_battery(data[0]);
                     'outer: loop {
                         let fut = battery_listener.next();
                         match select(async { cancel_signal.changed().await }, fut).await {
@@ -282,7 +287,13 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                                 break 'outer;
                             }
                             Either::Second(notification) => {
-                                pilot_controller::update_battery(notification.as_ref()[0]);
+                                //pilot_controller::update_battery(notification.as_ref()[0]);
+                                battery_sender.send((
+                                    Instant::now(),
+                                    ControllerBattery {
+                                        level: notification.as_ref()[0],
+                                    },
+                                ));
                             }
                         }
                     }
@@ -299,11 +310,11 @@ pub async fn run(wifi: &'static EspWifiController<'static>, bt: esp_hal::periphe
                         Timer::after(Duration::from_secs(2)).await;
                     }
                 })
-                    .await;
-            })
                 .await;
-        })
+            })
             .await;
+        })
+        .await;
     }
 }
 
@@ -318,10 +329,7 @@ where
         if all_characteristics[i].uuid == Uuid::new_short(0x2A4D) {
             if i < all_characteristics.len() - 1 {
                 let descriptors: Vec<trouble_host::gatt::Descriptor, 5> = client
-                    .get_descriptor_for_range(
-                        all_characteristics[i].handle + 1,
-                        all_characteristics[i + 1].handle - 1,
-                    )
+                    .get_descriptor_for_range(all_characteristics[i].handle + 1, all_characteristics[i + 1].handle - 1)
                     .await
                     .unwrap();
 
@@ -329,10 +337,8 @@ where
                     if x.attribute_type == Uuid::new_short(0x2908)
                     // Report reference
                     {
-                        let (report_id, report_type) = client
-                            .read_descriptor(x, |data| (data[0], data[1]))
-                            .await
-                            .unwrap();
+                        let (report_id, report_type) =
+                            client.read_descriptor(x, |data| (data[0], data[1])).await.unwrap();
 
                         if report_id == 1 && report_type == 1 {
                             return Some(i);
