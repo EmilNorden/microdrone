@@ -1,4 +1,7 @@
 (fp_lib_table
   (version 7)
   (lib (name "digikey-footprints")(type "KiCad")(uri "/Users/emilnorden/code/digikey-kicad-library/digikey-footprints.pretty")(options "")(descr ""))
+  (lib (name "fclib")(type "KiCad")(uri "${KIPRJMOD}/fclib.pretty")(options "")(descr ""))
+  (lib (name "TLV70018")(type "KiCad")(uri "/Users/emilnorden/kicad_symbols/TLV70018DCKR/KiCADv6/footprints.pretty")(options "")(descr ""))
+  (lib (name "ICM_20948")(type "KiCad")(uri "/Users/emilnorden/kicad_symbols/ICM_20948")(options "")(descr ""))
 )
