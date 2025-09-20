@@ -5,7 +5,7 @@ use alloc::format;
 use core::fmt::Debug;
 use core::str::FromStr;
 
-use embassy_futures::select::{select3, Either3};
+use embassy_futures::select::{select4, Either4};
 use embedded_graphics::image::Image;
 use embedded_graphics::mono_font::ascii::FONT_6X10;
 use embedded_graphics::mono_font::MonoTextStyle;
@@ -27,7 +27,7 @@ use tinyui::component::Component;
 use crate::gui::assets::{
     DRONE_DISCONNECTED_ICON_RAW, DRONE_ICON_RAW, GAMEPAD_CONNECTED_ICON_RAW, GAMEPAD_DISCONNECTED_ICON_RAW,
 };
-use crate::signal::{BatterySignal, ControllerConnectedSignal, RadioSignal};
+use crate::signal::{BatterySignal, ControllerConnectedSignal, DroneStatusSignal, RadioSignal};
 
 #[embassy_executor::task]
 pub async fn run(
@@ -37,6 +37,7 @@ pub async fn run(
     mut battery_signal: BatterySignal,
     mut radio_signal: RadioSignal,
     mut controller_signal: ControllerConnectedSignal,
+    mut drone_status_signal: DroneStatusSignal,
 ) {
     let interface = SPIInterface::new(spi_device, dc);
 
@@ -54,25 +55,27 @@ pub async fn run(
     let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
     let mut gamepad_battery_label: Label<'_, _, 15> =
         Label::new("-%", style, Point::new(22, -2), Rgb565::BLACK).unwrap();
+    let mut drone_battery_label: Label<'_, _, 15> = Label::new("-%", style, Point::new(72, -2), Rgb565::BLACK).unwrap();
 
     let gamepad_connected_icon = Image::new(&GAMEPAD_CONNECTED_ICON_RAW, Point::new(0, 0));
     let gamepad_disconnected_icon = Image::new(&GAMEPAD_DISCONNECTED_ICON_RAW, Point::new(0, 0));
     let drone_icon = Image::new(&DRONE_ICON_RAW, Point::new(50, 0));
     let drone_disconnected_icon = Image::new(&DRONE_DISCONNECTED_ICON_RAW, Point::new(50, 0));
     loop {
-        match select3(
+        match select4(
             battery_signal.next_value(),
             controller_signal.next_value(),
             radio_signal.next_value(),
+            drone_status_signal.next_value(),
         )
         .await
         {
-            Either3::First(battery) => {
+            Either4::First(battery) => {
                 esp_println::println!("DRAWING battery text");
                 gamepad_battery_label.set_text(&format!("{}%", battery.level)).unwrap();
                 gamepad_battery_label.draw(&mut display).unwrap();
             }
-            Either3::Second(connected) => {
+            Either4::Second(connected) => {
                 if connected {
                     gamepad_connected_icon.draw(&mut display).unwrap();
                     gamepad_battery_label.set_visible(true);
@@ -82,12 +85,18 @@ pub async fn run(
                 }
                 gamepad_battery_label.draw(&mut display).unwrap();
             }
-            Either3::Third(radio) => {
+            Either4::Third(radio) => {
                 if radio.connected {
                     drone_icon.draw(&mut display).unwrap();
                 } else {
                     drone_disconnected_icon.draw(&mut display).unwrap();
                 }
+            }
+            Either4::Fourth(drone_status) => {
+                drone_battery_label
+                    .set_text(&format!("{}%", drone_status.battery_level))
+                    .unwrap();
+                drone_battery_label.draw(&mut display).unwrap();
             }
         }
     }

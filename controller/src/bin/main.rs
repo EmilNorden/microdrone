@@ -10,8 +10,9 @@ extern crate alloc;
 use core::mem::ManuallyDrop;
 
 use controller::signal::{
-    battery_signal, controller_connected_signal, input_signal, new_battery_signal_emitter,
-    new_controller_connected_signal_emitter, new_input_signal_emitter, new_radio_signal_emitter, radio_signal,
+    battery_signal, controller_connected_signal, drone_status_signal, input_signal, new_battery_signal_emitter,
+    new_controller_connected_signal_emitter, new_drone_status_signal_emitter, new_input_signal_emitter,
+    new_radio_signal_emitter, radio_signal,
 };
 use controller::{gui, input, radio};
 use embassy_executor::Spawner;
@@ -91,6 +92,7 @@ async fn main(spawner: Spawner) {
     let input_emitter = new_input_signal_emitter();
     let controller_emitter = new_controller_connected_signal_emitter();
     let radio_status_emitter = new_radio_signal_emitter();
+    let drone_status_emitter = new_drone_status_signal_emitter();
 
     spawner
         .spawn(input::run(
@@ -109,6 +111,7 @@ async fn main(spawner: Spawner) {
             battery_signal(),
             radio_signal(),
             controller_connected_signal(),
+            drone_status_signal(),
         ))
         .unwrap();
     spawner
@@ -118,6 +121,7 @@ async fn main(spawner: Spawner) {
             radio_irq,
             input_signal(),
             radio_status_emitter,
+            drone_status_emitter,
         ))
         .unwrap();
 

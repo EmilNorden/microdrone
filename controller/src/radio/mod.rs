@@ -12,7 +12,7 @@ use nrf24_rs::config::{NrfConfig, PALevel, PayloadSize};
 use nrf24_rs::{Nrf24l01, MAX_PAYLOAD_SIZE};
 use zerocopy::{FromBytes, IntoBytes};
 
-use crate::signal::{ControllerInput, InputSignal, RadioEmitter, RadioStatus};
+use crate::signal::{ControllerInput, DroneStatusEmitter, InputSignal, RadioEmitter, RadioStatus};
 
 #[embassy_executor::task]
 pub async fn run(
@@ -21,6 +21,7 @@ pub async fn run(
     mut irq: Input<'static>,
     mut input_signal: InputSignal,
     mut radio_status_emitter: RadioEmitter,
+    mut drone_status_emitter: DroneStatusEmitter,
 ) {
     const {
         assert!(
@@ -103,6 +104,7 @@ pub async fn run(
                                 if let Ok(drone_status) = DroneStatus::read_from_bytes(&ack_buffer[0..len]) {
                                     radio_status_emitter.emit_if_changed(RadioStatus { connected: true });
                                     esp_println::println!("ACK received ({}) {:?}", len, drone_status);
+                                    drone_status_emitter.emit(drone_status);
                                 } else {
                                     esp_println::println!("Unable to parse ACK");
                                 }
