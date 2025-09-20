@@ -1,7 +1,7 @@
 #![no_std]
 
-mod telemetry;
-pub use telemetry::Telemetry;
+mod signal;
+pub use signal::{Signal, SignalEmitter};
 
 use zerocopy::{FromBytes, Immutable, IntoBytes};
 

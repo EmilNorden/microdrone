@@ -1,7 +1,7 @@
 mod state;
 
 use embassy_futures::select::{select, Either};
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::{Duration, Ticker};
 use embedded_hal_bus::spi::AtomicDevice;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Event, Input, Output};
@@ -12,15 +12,15 @@ use nrf24_rs::config::{NrfConfig, PALevel, PayloadSize};
 use nrf24_rs::{Nrf24l01, MAX_PAYLOAD_SIZE};
 use zerocopy::{FromBytes, IntoBytes};
 
-use crate::input;
-use crate::telemetry::{ControllerInput, InputTelemetry};
+use crate::signal::{ControllerInput, InputSignal, RadioEmitter, RadioStatus};
 
 #[embassy_executor::task]
 pub async fn run(
     spi_device: AtomicDevice<'static, Spi<'static, Async>, Output<'static>, Delay>,
     ce: Output<'static>,
     mut irq: Input<'static>,
-    mut input_telemetry: InputTelemetry,
+    mut input_signal: InputSignal,
+    mut radio_status_emitter: RadioEmitter,
 ) {
     const {
         assert!(
@@ -28,7 +28,7 @@ pub async fn run(
             "FlightInput size exceeds max payload size"
         );
     }
-
+    radio_status_emitter.emit(RadioStatus { connected: false });
     irq.listen(Event::FallingEdge);
 
     esp_println::println!("TX Radio init");
@@ -55,12 +55,72 @@ pub async fn run(
 
     esp_println::println!("Radio 1 started!");
 
-    let mut ticker = Ticker::every(Duration::from_millis(10));
-
+    let mut ticker = Ticker::every(Duration::from_millis(1000));
+    let mut i = 0;
     let mut latched_input = ControllerInput::default();
     let mut last_input = ControllerInput::default();
     loop {
-        let sel = select(input_telemetry.next_value(), ticker.next()).await;
+        match select(ticker.next(), input_signal.next_value()).await {
+            Either::First(()) => {}
+            Either::Second(mut input) => {
+                last_input = input;
+                input.buttons |= latched_input.buttons;
+                latched_input = input;
+                continue;
+            }
+        }
+
+        esp_println::println!("tick! {}", i);
+        i = i + 1;
+
+        let input: FlightInput = latched_input.into();
+        latched_input = last_input;
+
+        match radio.write(&mut delay, input.as_bytes()) {
+            Ok(_) => {
+                esp_println::println!("Waiting for IRQ...");
+                irq.wait_for_falling_edge().await;
+                let status = radio.status().unwrap();
+
+                if status.reached_max_retries() {
+                    esp_println::println!("MAX_RT");
+                    radio_status_emitter.emit_if_changed(RadioStatus { connected: false });
+                } else {
+                    esp_println::println!(
+                        "data sent: {} data ready: {} - ",
+                        status.data_sent(),
+                        status.data_ready()
+                    );
+
+                    let mut ack_buffer = [0; 32];
+                    match radio.read(&mut ack_buffer) {
+                        Ok(len) => {
+                            if len != DRONE_STATUS_SIZE {
+                                /* After connection has been re-established between controller and drone, it seems like
+                                there may be ACKs of larger size than expected. I choose to just log these for now */
+                                esp_println::println!("Received ACK of size {}", len);
+                            } else {
+                                if let Ok(drone_status) = DroneStatus::read_from_bytes(&ack_buffer[0..len]) {
+                                    radio_status_emitter.emit_if_changed(RadioStatus { connected: true });
+                                    esp_println::println!("ACK received ({}) {:?}", len, drone_status);
+                                } else {
+                                    esp_println::println!("Unable to parse ACK");
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            esp_println::println!("Error reading ACK {:?}", e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                radio.reset_status().unwrap();
+                esp_println::println!("Radio write error: {:?}", e);
+            }
+        }
+
+        /*let sel = select(input_telemetry.next_value(), ticker.next()).await;
         match sel {
             Either::First((ts, mut input)) => {
                 last_input = input;
@@ -100,13 +160,21 @@ pub async fn run(
                                     if status.data_ready() {
                                         //let mut ack_buffer = [0; MAX_PAYLOAD_SIZE as usize];
                                         let mut ack_buffer = [0; DRONE_STATUS_SIZE];
-                                        let len = radio.read(&mut ack_buffer).unwrap();
-                                        radio.reset_status().unwrap();
-
-                                        let drone_status = DroneStatus::read_from_bytes(&ack_buffer[0..len]).unwrap();
-                                        esp_println::println!("ACK received ({}) {:?}", len, drone_status);
+                                        match radio.read(&mut ack_buffer) {
+                                            Ok(len) => {
+                                                if let Ok(drone_status) =
+                                                    DroneStatus::read_from_bytes(&ack_buffer[0..len])
+                                                {
+                                                    esp_println::println!("ACK received ({}) {:?}", len, drone_status);
+                                                } else {
+                                                    esp_println::println!("Unable to parse ACK");
+                                                }
+                                            }
+                                            Err(e) => {
+                                                esp_println::println!("Error reading ACK {:?}", e);
+                                            }
+                                        }
                                     }
-
                                     radio.reset_status().unwrap();
                                 }
                             }
@@ -118,6 +186,6 @@ pub async fn run(
                 }
                 radio.reset_status().unwrap();
             }
-        }
+        }*/
     }
 }

@@ -1,11 +1,12 @@
+mod assets;
 mod battery_indicator;
 
 use alloc::format;
-use alloc::rc::Rc;
-use core::cell::RefCell;
 use core::fmt::Debug;
 use core::str::FromStr;
 
+use embassy_futures::select::{select3, Either3};
+use embedded_graphics::image::Image;
 use embedded_graphics::mono_font::ascii::FONT_6X10;
 use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::Rgb565;
@@ -23,14 +24,19 @@ use ssd1351::properties::DisplayRotation;
 use ssd1351::properties::DisplaySize::Display128x128;
 use tinyui::component::Component;
 
-use crate::telemetry::BatteryTelemetry;
+use crate::gui::assets::{
+    DRONE_DISCONNECTED_ICON_RAW, DRONE_ICON_RAW, GAMEPAD_CONNECTED_ICON_RAW, GAMEPAD_DISCONNECTED_ICON_RAW,
+};
+use crate::signal::{BatterySignal, ControllerConnectedSignal, RadioSignal};
 
 #[embassy_executor::task]
 pub async fn run(
     spi_device: AtomicDevice<'static, Spi<'static, Async>, Output<'static>, Delay>,
     mut rst: Output<'static>,
     dc: Output<'static>,
-    mut battery_telemetry: BatteryTelemetry,
+    mut battery_signal: BatterySignal,
+    mut radio_signal: RadioSignal,
+    mut controller_signal: ControllerConnectedSignal,
 ) {
     let interface = SPIInterface::new(spi_device, dc);
 
@@ -45,22 +51,45 @@ pub async fn run(
     display.reset(&mut rst, &mut delay).unwrap();
     display.init().unwrap();
 
-    /*let rect_r = Rectangle::new(Point::new(0, 0), Size::new(40, 20))
-        .into_styled(PrimitiveStyleBuilder::new().fill_color(Rgb565::RED).build());
-
-    rect_r.draw(&mut display).unwrap();*/
-
     let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
-    let mut ctrl_status_label: Label<'_, _, 15> =
-        Label::new("Not connected", style, Point::new(10, 10), Rgb565::BLACK).unwrap();
+    let mut gamepad_battery_label: Label<'_, _, 15> =
+        Label::new("-%", style, Point::new(22, -2), Rgb565::BLACK).unwrap();
 
-    let mut throttle_indicator = Rc::new(RefCell::new(ThrottleIndicator::new(Rgb565::GREEN)));
-
+    let gamepad_connected_icon = Image::new(&GAMEPAD_CONNECTED_ICON_RAW, Point::new(0, 0));
+    let gamepad_disconnected_icon = Image::new(&GAMEPAD_DISCONNECTED_ICON_RAW, Point::new(0, 0));
+    let drone_icon = Image::new(&DRONE_ICON_RAW, Point::new(50, 0));
+    let drone_disconnected_icon = Image::new(&DRONE_DISCONNECTED_ICON_RAW, Point::new(50, 0));
     loop {
-        ctrl_status_label.draw(&mut display).unwrap();
-
-        let (ts, battery) = battery_telemetry.next_value().await;
-        ctrl_status_label.set_text(&format!("{}%", battery.level)).unwrap();
+        match select3(
+            battery_signal.next_value(),
+            controller_signal.next_value(),
+            radio_signal.next_value(),
+        )
+        .await
+        {
+            Either3::First(battery) => {
+                esp_println::println!("DRAWING battery text");
+                gamepad_battery_label.set_text(&format!("{}%", battery.level)).unwrap();
+                gamepad_battery_label.draw(&mut display).unwrap();
+            }
+            Either3::Second(connected) => {
+                if connected {
+                    gamepad_connected_icon.draw(&mut display).unwrap();
+                    gamepad_battery_label.set_visible(true);
+                } else {
+                    gamepad_disconnected_icon.draw(&mut display).unwrap();
+                    gamepad_battery_label.set_visible(false);
+                }
+                gamepad_battery_label.draw(&mut display).unwrap();
+            }
+            Either3::Third(radio) => {
+                if radio.connected {
+                    drone_icon.draw(&mut display).unwrap();
+                } else {
+                    drone_disconnected_icon.draw(&mut display).unwrap();
+                }
+            }
+        }
     }
 }
 
@@ -71,6 +100,7 @@ struct Label<'a, C, const N: usize> {
     position: Point,
     clear_area: Rectangle,
     needs_redraw: bool,
+    visible: bool,
     background_color: C,
 }
 
@@ -91,6 +121,7 @@ where
             position,
             clear_area,
             needs_redraw: true,
+            visible: true,
             background_color,
         })
     }
@@ -99,15 +130,12 @@ where
         let width = style.font.character_size.width * text.len() as u32;
         let height = style.font.character_size.height;
 
-        esp_println::println!(
-            "Text length: {}. Char size: {} x {}. Calc size  {} x {}",
-            text.len(),
-            style.font.character_size.width,
-            style.font.character_size.height,
-            width,
-            height
-        );
         Size::new(width, height)
+    }
+
+    pub fn set_visible(&mut self, visible: bool) {
+        self.visible = visible;
+        self.needs_redraw = true;
     }
 
     pub fn set_text(&mut self, text: &str) -> Result<(), Self::Err> {
@@ -136,12 +164,14 @@ where
             .into_styled(PrimitiveStyleBuilder::new().fill_color(self.background_color).build())
             .draw(target)?;
 
-        Text::new(
-            self.text.as_str(),
-            Point::new(self.position.x, self.position.y + self.size.height as i32 - 1),
-            self.style,
-        )
-        .draw(target)?;
+        if self.visible {
+            Text::new(
+                self.text.as_str(),
+                Point::new(self.position.x, self.position.y + self.size.height as i32 - 1),
+                self.style,
+            )
+            .draw(target)?;
+        }
 
         self.needs_redraw = false;
 

@@ -6,7 +6,7 @@ use embassy_futures::join::{join, join3};
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::watch::Watch;
-use embassy_time::{Duration, Instant, Timer};
+use embassy_time::{Duration, Timer};
 use esp_hal::efuse::Efuse;
 use esp_wifi::ble::controller::BleConnector;
 use esp_wifi::EspWifiController;
@@ -18,7 +18,7 @@ use trouble_host::prelude::DefaultPacketPool;
 use trouble_host::{Address, Controller, Host, HostResources};
 
 use crate::input::pilot_controller;
-use crate::telemetry::{BatterySender, ControllerBattery, ControllerInput, InputSender};
+use crate::signal::{BatteryEmitter, ControllerBattery, ControllerConnectedEmitter, ControllerInput, InputEmitter};
 
 pub struct HIDReport {
     pub dpad: u8,
@@ -120,8 +120,9 @@ fn get_bluetooth_mac_address() -> [u8; 6] {
 pub async fn run(
     wifi: &'static EspWifiController<'static>,
     bt: esp_hal::peripherals::BT<'static>,
-    battery_sender: BatterySender,
-    input_sender: InputSender,
+    mut battery_emitter: BatteryEmitter,
+    mut input_emitter: InputEmitter,
+    mut controller_emitter: ControllerConnectedEmitter,
 ) {
     esp_println::println!("Init Bluetooth...");
     let transport = BleConnector::new(wifi, bt);
@@ -139,6 +140,7 @@ pub async fn run(
     } = stack.build();
 
     loop {
+        controller_emitter.emit(false);
         let cancel_watch: Watch<CriticalSectionRawMutex, (), 4> = Watch::new();
 
         let cancel_sender = cancel_watch.sender();
@@ -177,7 +179,7 @@ pub async fn run(
             let conn = match central.connect(&config).await {
                 Ok(c) => {
                     esp_println::println!("Connected");
-                    pilot_controller::update_connected(true);
+                    controller_emitter.emit(true);
                     c
                 }
                 Err(_) => {
@@ -263,7 +265,7 @@ pub async fn run(
                                 let hid_report = HIDReport::from_raw(notification.as_ref());
                                 esp_println::println!("{} {:?}", i, hid_report);
                                 //input_sender.send(ControllerInput)
-                                input_sender.send((Instant::now(), hid_report.into()));
+                                input_emitter.emit(hid_report.into());
                                 //pilot_controller::update_from_hid_report(hid_report);
                                 i = i.wrapping_add(1);
                             }
@@ -278,7 +280,7 @@ pub async fn run(
                         .read_characteristic(&battery_level_characteristic, &mut data)
                         .await
                         .unwrap();
-                    battery_sender.send((Instant::now(), ControllerBattery { level: data[0] }));
+                    battery_emitter.emit(ControllerBattery { level: data[0] });
                     //pilot_controller::update_battery(data[0]);
                     'outer: loop {
                         let fut = battery_listener.next();
@@ -288,12 +290,9 @@ pub async fn run(
                             }
                             Either::Second(notification) => {
                                 //pilot_controller::update_battery(notification.as_ref()[0]);
-                                battery_sender.send((
-                                    Instant::now(),
-                                    ControllerBattery {
-                                        level: notification.as_ref()[0],
-                                    },
-                                ));
+                                battery_emitter.emit(ControllerBattery {
+                                    level: notification.as_ref()[0],
+                                });
                             }
                         }
                     }

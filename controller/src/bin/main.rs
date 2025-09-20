@@ -9,10 +9,12 @@
 extern crate alloc;
 use core::mem::ManuallyDrop;
 
-use controller::telemetry::{battery_telemetry, battery_telemetry_sender, input_telemetry, input_telemetry_sender};
+use controller::signal::{
+    battery_signal, controller_connected_signal, input_signal, new_battery_signal_emitter,
+    new_controller_connected_signal_emitter, new_input_signal_emitter, new_radio_signal_emitter, radio_signal,
+};
 use controller::{gui, input, radio};
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer};
 use embedded_hal_bus::spi::AtomicDevice;
 use embedded_hal_bus::util::AtomicCell;
 use esp_hal::clock::CpuClock;
@@ -27,7 +29,8 @@ use esp_hal::Async;
 use esp_wifi::EspWifiController;
 
 #[panic_handler]
-fn panic(_: &core::panic::PanicInfo) -> ! {
+fn panic(p: &core::panic::PanicInfo) -> ! {
+    esp_println::println!("Panic occurred: {:?}", p);
     loop {}
 }
 
@@ -84,21 +87,39 @@ async fn main(spawner: Spawner) {
     let radio_device = AtomicDevice::new(local_shared_bus, radio_csn, Delay::new()).unwrap();
     let radio_irq = Input::new(peripherals.GPIO12, InputConfig::default().with_pull(Pull::Up));
 
-    let battery_sender = battery_telemetry_sender();
-    let input_sender = input_telemetry_sender();
+    let battery_emitter = new_battery_signal_emitter();
+    let input_emitter = new_input_signal_emitter();
+    let controller_emitter = new_controller_connected_signal_emitter();
+    let radio_status_emitter = new_radio_signal_emitter();
+
     spawner
-        .spawn(input::run(local_wifi, peripherals.BT, battery_sender, input_sender))
+        .spawn(input::run(
+            local_wifi,
+            peripherals.BT,
+            battery_emitter,
+            input_emitter,
+            controller_emitter,
+        ))
         .unwrap();
     spawner
-        .spawn(gui::run(display_device, display_rst, display_dc, battery_telemetry()))
+        .spawn(gui::run(
+            display_device,
+            display_rst,
+            display_dc,
+            battery_signal(),
+            radio_signal(),
+            controller_connected_signal(),
+        ))
         .unwrap();
     spawner
-        .spawn(radio::run(radio_device, radio_ce, radio_irq, input_telemetry()))
+        .spawn(radio::run(
+            radio_device,
+            radio_ce,
+            radio_irq,
+            input_signal(),
+            radio_status_emitter,
+        ))
         .unwrap();
 
-    loop {
-        Timer::after(Duration::from_secs(1)).await;
-    }
-
-    // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.0.0-rc.0/examples/src/bin
+    core::future::pending::<()>().await;
 }
