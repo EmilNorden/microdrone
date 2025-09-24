@@ -4,8 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-zerocopy = {version = "0.8.26", features = ["derive"]}
+zerocopy = { version = "0.8.26", features = ["derive"] }
 defmt = "1.0.1"
 embassy-sync = "0.7.2"
 embassy-time = "0.5.0"
+embassy-futures = "0.1.2"
 paste = "1.0.15"
+
+[dev-dependencies]
+tokio = { version = "1.47.1", features = ["macros", "rt", "time"] }
+critical-section = { version = "1.1", features = ["std"] }
