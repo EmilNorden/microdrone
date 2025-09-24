@@ -1,6 +1,7 @@
 use crate::signal::{
     BatteryLevel, BatteryStatus, DroneBatteryLevelEmitter, DroneBatteryStatusEmitter,
 };
+use defmt::info;
 use embassy_stm32::adc::{Adc, AnyAdcChannel, Resolution, SampleTime};
 use embassy_stm32::peripherals::ADC1;
 use embassy_time::{Duration, Ticker};
@@ -29,17 +30,17 @@ pub async fn run(
     adc.set_resolution(Resolution::BITS12);
     adc.set_sample_time(SampleTime::CYCLES112);
 
+    // TODO: Re-write this to sample at 200-500 HZ. Sample vrefint and battery each time, average the samples and signal every 500ms.
     let mut ticker = Ticker::every(Duration::from_millis(500));
     loop {
         let raw = adc.blocking_read(&mut adc_channel) as u32;
         let pin_mv = raw * VDDA_MV / ADC_MAX;
         let mut battery_mv = pin_mv * (R_TOP + R_BOT) / R_BOT;
+        info!("Read Battery (adjusted): {} ({})", pin_mv, battery_mv);
         if battery_mv < BATTERY_CUTOFF_MV {
             battery_mv = BATTERY_CUTOFF_MV;
         }
 
-        // TODO: Just for testing. Remove this!!
-        battery_mv = 8_000;
         let voltage_range = (battery_mv - BATTERY_CUTOFF_MV) as f32 / BATTERY_RANGE_MV as f32;
         let level = BatteryLevel((voltage_range.clamp(0.0, 1.0) * 100.0).ceil() as u8);
 

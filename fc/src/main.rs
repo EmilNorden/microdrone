@@ -6,7 +6,7 @@ mod radio;
 mod signal;
 
 use crate::signal::{
-    drone_battery_level_signal, drone_battery_status_signal, new_drone_battery_level_signal_emitter,
+    altitude_signal, drone_battery_level_signal, drone_battery_status_signal, new_drone_battery_level_signal_emitter,
     new_drone_battery_status_signal_emitter, BatteryStatus,
 };
 use defmt::*;
@@ -23,6 +23,7 @@ use embassy_stm32::time::Hertz;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::mutex::Mutex;
 use embassy_time::{Duration, Timer};
+use fc_common::SignalBase;
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -74,7 +75,7 @@ async fn main(spawner: Spawner) {
     // Halt start-up if battery level is critical
     battery_power_on_self_test().await;
 
-    // Setup SPU
+    // Setup SPI
     let mut spi_config = Config::default();
     spi_config.frequency = Hertz(1_000_000);
     let spi = Spi::new(
@@ -95,12 +96,15 @@ async fn main(spawner: Spawner) {
             radio_ce,
             radio_irq,
             drone_battery_level_signal(),
+            altitude_signal(),
         ))
         .unwrap();
 
     let bmp390_cs = Output::new(p.PB14, Level::High, Speed::Low);
     let bmp390_device = SpiDevice::new(spi_bus, bmp390_cs);
     let bmp390_irq = ExtiInput::new(p.PB6, p.EXTI6, Pull::Up);
+
+    spawner.spawn(env::run(bmp390_device, bmp390_irq)).unwrap();
     /*
     let r = adc.blocking_read(&mut battery);
 

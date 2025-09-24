@@ -537,6 +537,7 @@ dependencies = [
  "panic-probe",
  "paste",
  "static_cell",
+ "uom",
  "zerocopy",
 ]
 
@@ -545,6 +546,7 @@ name = "fc-common"
 version = "0.1.0"
 dependencies = [
  "defmt 1.0.1",
+ "embassy-futures",
  "embassy-sync",
  "embassy-time",
  "paste",
@@ -643,6 +645,7 @@ checksum = "8d5439c4ad607c3c23abf66de8c8bf57ba8adcd1f129e699851a6e43935d339d"
 name = "nrf24-rs"
 version = "0.2.0"
 dependencies = [
+ "defmt 0.3.100",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
 ]
@@ -852,10 +855,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "typenum"
+version = "1.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
+
+[[package]]
+name = "uom"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd5cfe7d84f6774726717f358a37f5bca8fca273bed4de40604ad129d1107b49"
+dependencies = [
+ "num-traits",
+ "typenum",
+]
 
 [[package]]
 name = "vcell"
