@@ -10,9 +10,10 @@ extern crate alloc;
 use core::mem::ManuallyDrop;
 
 use controller::signal::{
-    battery_signal, controller_connected_signal, drone_status_signal, input_signal, new_battery_signal_emitter,
-    new_controller_connected_signal_emitter, new_drone_status_signal_emitter, new_input_signal_emitter,
-    new_radio_signal_emitter, radio_signal,
+    battery_signal, controller_connected_signal, drone_altitude_signal, drone_battery_level_signal, input_signal,
+    new_battery_signal_emitter, new_controller_connected_signal_emitter, new_drone_altitude_signal_emitter,
+    new_drone_battery_level_signal_emitter, new_input_signal_emitter, new_radio_link_quality_signal_emitter,
+    new_radio_signal_emitter, radio_link_quality_signal, radio_signal,
 };
 use controller::{gui, input, radio};
 use embassy_executor::Spawner;
@@ -88,12 +89,16 @@ async fn main(spawner: Spawner) {
     let radio_device = AtomicDevice::new(local_shared_bus, radio_csn, Delay::new()).unwrap();
     let radio_irq = Input::new(peripherals.GPIO12, InputConfig::default().with_pull(Pull::Up));
 
+    /* Create signal emitters */
     let battery_emitter = new_battery_signal_emitter();
     let input_emitter = new_input_signal_emitter();
     let controller_emitter = new_controller_connected_signal_emitter();
     let radio_status_emitter = new_radio_signal_emitter();
-    let drone_status_emitter = new_drone_status_signal_emitter();
+    let drone_battery_emitter = new_drone_battery_level_signal_emitter();
+    let drone_altitude_emitter = new_drone_altitude_signal_emitter();
+    let radio_link_quality_emitter = new_radio_link_quality_signal_emitter();
 
+    /* Start up sub-systems */
     spawner
         .spawn(input::run(
             local_wifi,
@@ -111,7 +116,9 @@ async fn main(spawner: Spawner) {
             battery_signal(),
             radio_signal(),
             controller_connected_signal(),
-            drone_status_signal(),
+            drone_battery_level_signal(),
+            drone_altitude_signal(),
+            radio_link_quality_signal(),
         ))
         .unwrap();
     spawner
@@ -121,7 +128,9 @@ async fn main(spawner: Spawner) {
             radio_irq,
             input_signal(),
             radio_status_emitter,
-            drone_status_emitter,
+            drone_altitude_emitter,
+            drone_battery_emitter,
+            radio_link_quality_emitter,
         ))
         .unwrap();
 

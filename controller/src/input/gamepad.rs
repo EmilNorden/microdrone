@@ -263,7 +263,7 @@ pub async fn run(
                             }
                             Either::Second(notification) => {
                                 let hid_report = HIDReport::from_raw(notification.as_ref());
-                                esp_println::println!("{} {:?}", i, hid_report);
+                                //esp_println::println!("{} {:?}", i, hid_report);
                                 //input_sender.send(ControllerInput)
                                 input_emitter.emit(hid_report.into());
                                 //pilot_controller::update_from_hid_report(hid_report);

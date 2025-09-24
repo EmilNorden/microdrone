@@ -1,33 +1,41 @@
+mod altimeter;
+use uom::num_traits::Float;
 mod assets;
 mod battery_indicator;
+mod label;
 
 use alloc::format;
 use core::fmt::Debug;
 use core::str::FromStr;
 
-use embassy_futures::select::{select4, Either4};
+use embassy_futures::select::{select6, Either6};
 use embedded_graphics::image::Image;
-use embedded_graphics::mono_font::ascii::FONT_6X10;
+use embedded_graphics::mono_font::ascii::FONT_8X13_BOLD;
 use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{PrimitiveStyleBuilder, Rectangle};
-use embedded_graphics::text::Text;
 use embedded_hal_bus::spi::AtomicDevice;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::Output;
 use esp_hal::spi::master::Spi;
 use esp_hal::Async;
+use fc_common::SignalBase;
 use ssd1351::mode::GraphicsMode;
 use ssd1351::prelude::SPIInterface;
 use ssd1351::properties::DisplayRotation;
 use ssd1351::properties::DisplaySize::Display128x128;
 use tinyui::component::Component;
+use uom::num_traits::Euclid;
 
 use crate::gui::assets::{
     DRONE_DISCONNECTED_ICON_RAW, DRONE_ICON_RAW, GAMEPAD_CONNECTED_ICON_RAW, GAMEPAD_DISCONNECTED_ICON_RAW,
 };
-use crate::signal::{BatterySignal, ControllerConnectedSignal, DroneStatusSignal, RadioSignal};
+use crate::gui::label::Label;
+use crate::signal::{
+    BatterySignal, ControllerConnectedSignal, DroneAltitudeSignal, DroneBatteryLevelSignal, RadioLinkQualitySignal,
+    RadioSignal,
+};
 
 #[embassy_executor::task]
 pub async fn run(
@@ -37,7 +45,9 @@ pub async fn run(
     mut battery_signal: BatterySignal,
     mut radio_signal: RadioSignal,
     mut controller_signal: ControllerConnectedSignal,
-    mut drone_status_signal: DroneStatusSignal,
+    mut drone_battery_signal: DroneBatteryLevelSignal,
+    mut drone_altitude_signal: DroneAltitudeSignal,
+    mut radio_link_quality_signal: RadioLinkQualitySignal,
 ) {
     let interface = SPIInterface::new(spi_device, dc);
 
@@ -52,30 +62,35 @@ pub async fn run(
     display.reset(&mut rst, &mut delay).unwrap();
     display.init().unwrap();
 
-    let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
+    let style = MonoTextStyle::new(&FONT_8X13_BOLD, Rgb565::WHITE);
     let mut gamepad_battery_label: Label<'_, _, 15> =
-        Label::new("-%", style, Point::new(22, -2), Rgb565::BLACK).unwrap();
-    let mut drone_battery_label: Label<'_, _, 15> = Label::new("-%", style, Point::new(72, -2), Rgb565::BLACK).unwrap();
+        Label::new("-%", style, Point::new(22, -3), Rgb565::BLACK).unwrap();
+    let mut drone_battery_label: Label<'_, _, 15> = Label::new("-%", style, Point::new(92, -3), Rgb565::BLACK).unwrap();
+    let mut altitude_label: Label<'_, _, 15> = Label::new("-%", style, Point::new(0, 40), Rgb565::BLACK).unwrap();
+    let mut quality_label: Label<'_, _, 15> = Label::new("-%", style, Point::new(0, 70), Rgb565::BLACK).unwrap();
 
     let gamepad_connected_icon = Image::new(&GAMEPAD_CONNECTED_ICON_RAW, Point::new(0, 0));
     let gamepad_disconnected_icon = Image::new(&GAMEPAD_DISCONNECTED_ICON_RAW, Point::new(0, 0));
-    let drone_icon = Image::new(&DRONE_ICON_RAW, Point::new(50, 0));
-    let drone_disconnected_icon = Image::new(&DRONE_DISCONNECTED_ICON_RAW, Point::new(50, 0));
+    let drone_icon = Image::new(&DRONE_ICON_RAW, Point::new(70, 0));
+    let drone_disconnected_icon = Image::new(&DRONE_DISCONNECTED_ICON_RAW, Point::new(70, 0));
     loop {
-        match select4(
+        match select6(
             battery_signal.next_value(),
             controller_signal.next_value(),
             radio_signal.next_value(),
-            drone_status_signal.next_value(),
+            core::future::pending::<()>(),
+            //drone_battery_signal.next_value(),
+            drone_altitude_signal.next_value(),
+            radio_link_quality_signal.next_value(),
         )
         .await
         {
-            Either4::First(battery) => {
+            Either6::First(battery) => {
                 esp_println::println!("DRAWING battery text");
                 gamepad_battery_label.set_text(&format!("{}%", battery.level)).unwrap();
                 gamepad_battery_label.draw(&mut display).unwrap();
             }
-            Either4::Second(connected) => {
+            Either6::Second(connected) => {
                 if connected {
                     gamepad_connected_icon.draw(&mut display).unwrap();
                     gamepad_battery_label.set_visible(true);
@@ -85,106 +100,34 @@ pub async fn run(
                 }
                 gamepad_battery_label.draw(&mut display).unwrap();
             }
-            Either4::Third(radio) => {
+            Either6::Third(radio) => {
                 if radio.connected {
                     drone_icon.draw(&mut display).unwrap();
+                    drone_battery_label.set_visible(true);
                 } else {
                     drone_disconnected_icon.draw(&mut display).unwrap();
+                    drone_battery_label.set_visible(false);
                 }
-            }
-            Either4::Fourth(drone_status) => {
-                drone_battery_label
-                    .set_text(&format!("{}%", drone_status.battery_level))
-                    .unwrap();
                 drone_battery_label.draw(&mut display).unwrap();
             }
+            Either6::Fourth(level) => {
+                drone_battery_label.set_text(&format!("{}%", 0)).unwrap();
+                drone_battery_label.draw(&mut display).unwrap();
+            }
+            Either6::Fifth(altitude) => {
+                let (meters, quarters) = altitude.div_rem_euclid(&4);
+                altitude_label
+                    .set_text(&format!("Alt: {}.{}m", meters, quarters * 25))
+                    .unwrap();
+                altitude_label.draw(&mut display).unwrap();
+            }
+            Either6::Sixth(quality) => {
+                quality_label
+                    .set_text(&format!("Link: {}%", (quality * 100.0).round()))
+                    .unwrap();
+                quality_label.draw(&mut display).unwrap();
+            }
         }
-    }
-}
-
-struct Label<'a, C, const N: usize> {
-    text: heapless::String<N>,
-    style: MonoTextStyle<'a, C>,
-    size: Size,
-    position: Point,
-    clear_area: Rectangle,
-    needs_redraw: bool,
-    visible: bool,
-    background_color: C,
-}
-
-impl<'a, C, const N: usize> Label<'a, C, N>
-where
-    C: PixelColor,
-{
-    type Err = ();
-    fn new(text: &str, style: MonoTextStyle<'a, C>, position: Point, background_color: C) -> Result<Self, Self::Err> {
-        let text = heapless::String::from_str(text)?;
-        let size = Self::calculate_size(&text, &style);
-        let clear_area = Rectangle::new(position, size);
-
-        Ok(Self {
-            text,
-            style,
-            size,
-            position,
-            clear_area,
-            needs_redraw: true,
-            visible: true,
-            background_color,
-        })
-    }
-
-    fn calculate_size(text: &heapless::String<N>, style: &MonoTextStyle<C>) -> Size {
-        let width = style.font.character_size.width * text.len() as u32;
-        let height = style.font.character_size.height;
-
-        Size::new(width, height)
-    }
-
-    pub fn set_visible(&mut self, visible: bool) {
-        self.visible = visible;
-        self.needs_redraw = true;
-    }
-
-    pub fn set_text(&mut self, text: &str) -> Result<(), Self::Err> {
-        if text == self.text {
-            return Ok(());
-        }
-        esp_println::println!("Setting text to {}", text);
-
-        self.text = heapless::String::from_str(text)?;
-        self.size = Self::calculate_size(&self.text, &self.style);
-        self.needs_redraw = true;
-
-        Ok(())
-    }
-
-    fn draw<D>(&mut self, target: &mut D) -> Result<(), <D as DrawTarget>::Error>
-    where
-        C: PixelColor,
-        D: DrawTarget<Color = C>,
-    {
-        if !self.needs_redraw {
-            return Ok(());
-        }
-
-        self.clear_area
-            .into_styled(PrimitiveStyleBuilder::new().fill_color(self.background_color).build())
-            .draw(target)?;
-
-        if self.visible {
-            Text::new(
-                self.text.as_str(),
-                Point::new(self.position.x, self.position.y + self.size.height as i32 - 1),
-                self.style,
-            )
-            .draw(target)?;
-        }
-
-        self.needs_redraw = false;
-
-        Ok(())
     }
 }
 

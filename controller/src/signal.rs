@@ -1,11 +1,13 @@
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-use fc_common::{define_signal, DroneStatus, FlightInput, Signal, SignalEmitter};
+use fc_common::{define_signal, FlightInput, Signal, SignalBase, SignalEmitter};
 
 define_signal!(Radio, RadioStatus, 1);
 define_signal!(ControllerConnected, bool, 1);
 define_signal!(Battery, ControllerBattery, 2);
 define_signal!(Input, ControllerInput, 1);
-define_signal!(DroneStatus, DroneStatus, 1);
+define_signal!(DroneBatteryLevel, u8, 1);
+define_signal!(DroneAltitude, u8, 1);
+define_signal!(RadioLinkQuality, f32, 1);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RadioStatus {

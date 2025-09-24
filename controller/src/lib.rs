@@ -3,5 +3,6 @@
 extern crate alloc;
 pub mod gui;
 pub mod input;
+pub mod moving_sum;
 pub mod radio;
 pub mod signal;

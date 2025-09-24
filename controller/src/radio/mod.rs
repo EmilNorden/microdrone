@@ -1,18 +1,22 @@
 mod state;
 
-use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Ticker};
+use embedded_hal::digital::OutputPin;
+use embedded_hal::spi::SpiDevice;
 use embedded_hal_bus::spi::AtomicDevice;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Event, Input, Output};
 use esp_hal::spi::master::Spi;
 use esp_hal::Async;
-use fc_common::{DroneStatus, FlightInput, DRONE_STATUS_SIZE, FLIGHT_INPUT_SIZE};
+use fc_common::{DroneStatus, FlightInput, SignalBase, DRONE_STATUS_SIZE, FLIGHT_INPUT_SIZE};
 use nrf24_rs::config::{NrfConfig, PALevel, PayloadSize};
 use nrf24_rs::{Nrf24l01, MAX_PAYLOAD_SIZE};
 use zerocopy::{FromBytes, IntoBytes};
 
-use crate::signal::{ControllerInput, DroneStatusEmitter, InputSignal, RadioEmitter, RadioStatus};
+use crate::moving_sum::MovingSum;
+use crate::signal::{
+    DroneAltitudeEmitter, DroneBatteryLevelEmitter, InputSignal, RadioEmitter, RadioLinkQualityEmitter, RadioStatus,
+};
 
 #[embassy_executor::task]
 pub async fn run(
@@ -21,7 +25,9 @@ pub async fn run(
     mut irq: Input<'static>,
     mut input_signal: InputSignal,
     mut radio_status_emitter: RadioEmitter,
-    mut drone_status_emitter: DroneStatusEmitter,
+    mut drone_altitude_emitter: DroneAltitudeEmitter,
+    mut drone_battery_emitter: DroneBatteryLevelEmitter,
+    mut radio_link_quality_emitter: RadioLinkQualityEmitter,
 ) {
     const {
         assert!(
@@ -34,7 +40,7 @@ pub async fn run(
 
     esp_println::println!("TX Radio init");
     let config = NrfConfig::default()
-        .channel(8)
+        .channel(76)
         .pa_level(PALevel::Min)
         .payload_size(PayloadSize::Dynamic)
         .ack_payloads_enabled(true);
@@ -56,138 +62,82 @@ pub async fn run(
 
     esp_println::println!("Radio 1 started!");
 
-    let mut ticker = Ticker::every(Duration::from_millis(1000));
+    let mut ticker = Ticker::every(Duration::from_millis(10));
     let mut i = 0;
-    let mut latched_input = ControllerInput::default();
-    let mut last_input = ControllerInput::default();
+    let mut moving_sum: MovingSum<u8, u16, 50> = MovingSum::new();
+    let mut quality_update_ticker = 0;
+    const QUALITY_UPDATE_FREQUENCY: usize = 5;
+    let mut total_failures = 0;
     loop {
-        match select(ticker.next(), input_signal.next_value()).await {
-            Either::First(()) => {}
-            Either::Second(mut input) => {
-                last_input = input;
-                input.buttons |= latched_input.buttons;
-                latched_input = input;
-                continue;
-            }
-        }
-
-        esp_println::println!("tick! {}", i);
+        ticker.next().await;
+        esp_println::println!("tick! {}   fail: {}", i, total_failures);
         i = i + 1;
 
-        let input: FlightInput = latched_input.into();
-        latched_input = last_input;
+        let input: FlightInput = input_signal.get().into();
 
         match radio.write(&mut delay, input.as_bytes()) {
             Ok(_) => {
-                esp_println::println!("Waiting for IRQ...");
-                irq.wait_for_falling_edge().await;
+                moving_sum.push(radio.retries_in_last_transmission().unwrap());
+                quality_update_ticker += 1;
+                if quality_update_ticker > QUALITY_UPDATE_FREQUENCY {
+                    quality_update_ticker = 0;
+                    let link_score = 1.0 - (moving_sum.average() / 15.0);
+                    radio_link_quality_emitter.emit(link_score);
+                }
+
+                irq.wait_for_low().await;
+
                 let status = radio.status().unwrap();
+                radio.reset_status().unwrap();
 
                 if status.reached_max_retries() {
                     esp_println::println!("MAX_RT");
-                    radio_status_emitter.emit_if_changed(RadioStatus { connected: false });
+                    total_failures += 1;
+                    radio.flush_tx().unwrap();
+                } else if let Some(ack) = read_ack(&mut radio).await {
+                    radio_status_emitter.emit_if_changed(RadioStatus { connected: true });
+                    //drone_status_emitter.emit(drone_status);
+                    drone_altitude_emitter.emit(ack.altitude);
+                    drone_battery_emitter.emit(ack.battery_level);
                 } else {
-                    esp_println::println!(
-                        "data sent: {} data ready: {} - ",
-                        status.data_sent(),
-                        status.data_ready()
-                    );
-
-                    let mut ack_buffer = [0; 32];
-                    match radio.read(&mut ack_buffer) {
-                        Ok(len) => {
-                            if len != DRONE_STATUS_SIZE {
-                                /* After connection has been re-established between controller and drone, it seems like
-                                there may be ACKs of larger size than expected. I choose to just log these for now */
-                                esp_println::println!("Received ACK of size {}", len);
-                            } else {
-                                if let Ok(drone_status) = DroneStatus::read_from_bytes(&ack_buffer[0..len]) {
-                                    radio_status_emitter.emit_if_changed(RadioStatus { connected: true });
-                                    esp_println::println!("ACK received ({}) {:?}", len, drone_status);
-                                    drone_status_emitter.emit(drone_status);
-                                } else {
-                                    esp_println::println!("Unable to parse ACK");
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            esp_println::println!("Error reading ACK {:?}", e);
-                        }
-                    }
+                    total_failures += 1;
                 }
             }
             Err(e) => {
                 radio.reset_status().unwrap();
-                esp_println::println!("Radio write error: {:?}", e);
+                total_failures += 1;
+                esp_println::println!("ERR: Radio write error: {:?}", e);
             }
         }
+    }
+}
 
-        /*let sel = select(input_telemetry.next_value(), ticker.next()).await;
-        match sel {
-            Either::First((ts, mut input)) => {
-                last_input = input;
-                input.buttons |= latched_input.buttons;
-                latched_input = input;
-            }
-            Either::Second(()) => {
-                radio.reset_status().unwrap();
-
-                let input: FlightInput = latched_input.into();
-                latched_input = last_input;
-
-                match radio.write(&mut delay, input.as_bytes()) {
-                    Ok(_) => {
-                        match select(async { Timer::after(Duration::from_millis(1000)).await }, async {
-                            irq.wait_for(Event::FallingEdge).await
-                        })
-                        .await
-                        {
-                            Either::First(_) => {
-                                esp_println::print!("No reply from drone.");
-                                radio.reset_status().unwrap();
-                            }
-                            Either::Second(_) => {
-                                let status = radio.status().unwrap();
-
-                                if status.reached_max_retries() {
-                                    esp_println::println!("MAX_RT");
-                                    radio.reset_status().unwrap();
-                                } else {
-                                    input::reset_buttons_latch();
-                                    esp_println::println!(
-                                        "data sent: {} data ready: {} - ",
-                                        status.data_sent(),
-                                        status.data_ready()
-                                    );
-                                    if status.data_ready() {
-                                        //let mut ack_buffer = [0; MAX_PAYLOAD_SIZE as usize];
-                                        let mut ack_buffer = [0; DRONE_STATUS_SIZE];
-                                        match radio.read(&mut ack_buffer) {
-                                            Ok(len) => {
-                                                if let Ok(drone_status) =
-                                                    DroneStatus::read_from_bytes(&ack_buffer[0..len])
-                                                {
-                                                    esp_println::println!("ACK received ({}) {:?}", len, drone_status);
-                                                } else {
-                                                    esp_println::println!("Unable to parse ACK");
-                                                }
-                                            }
-                                            Err(e) => {
-                                                esp_println::println!("Error reading ACK {:?}", e);
-                                            }
-                                        }
-                                    }
-                                    radio.reset_status().unwrap();
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        esp_println::print!("Radio write error: {:?}", e);
-                    }
+async fn read_ack<SPI, CE>(radio: &mut Nrf24l01<SPI, CE, nrf24_rs::Sync>) -> Option<DroneStatus>
+where
+    SPI: SpiDevice,
+    CE: OutputPin,
+{
+    let mut ack_buffer = [0; 32];
+    match radio.read(&mut ack_buffer) {
+        Ok(len) => {
+            if len != DRONE_STATUS_SIZE {
+                /* After connection has been re-established between controller and drone, it seems like
+                there may be ACKs of larger size than expected. I choose to just log these for now */
+                esp_println::println!("Received ACK of size {}", len);
+                None
+            } else {
+                if let Ok(drone_status) = DroneStatus::read_from_bytes(&ack_buffer[0..len]) {
+                    esp_println::println!("ACK received ({}) {:?}", len, drone_status);
+                    Some(drone_status)
+                } else {
+                    esp_println::println!("Unable to parse ACK");
+                    None
                 }
-                radio.reset_status().unwrap();
             }
-        }*/
+        }
+        Err(e) => {
+            esp_println::println!("Error reading ACK {:?}", e);
+            None
+        }
     }
 }
