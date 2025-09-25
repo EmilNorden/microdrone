@@ -8,18 +8,19 @@ use alloc::format;
 use core::fmt::Debug;
 use core::str::FromStr;
 
+use embassy_embedded_hal::shared_bus::blocking::spi::SpiDevice;
 use embassy_futures::select::{select6, Either6};
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_graphics::image::Image;
 use embedded_graphics::mono_font::ascii::FONT_8X13_BOLD;
 use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{PrimitiveStyleBuilder, Rectangle};
-use embedded_hal_bus::spi::AtomicDevice;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::Output;
 use esp_hal::spi::master::Spi;
-use esp_hal::Async;
+use esp_hal::Blocking;
 use fc_common::SignalBase;
 use ssd1351::mode::GraphicsMode;
 use ssd1351::prelude::SPIInterface;
@@ -39,7 +40,7 @@ use crate::signal::{
 
 #[embassy_executor::task]
 pub async fn run(
-    spi_device: AtomicDevice<'static, Spi<'static, Async>, Output<'static>, Delay>,
+    spi_device: SpiDevice<'static, NoopRawMutex, Spi<'static, Blocking>, Output<'static>>,
     mut rst: Output<'static>,
     dc: Output<'static>,
     mut battery_signal: BatterySignal,

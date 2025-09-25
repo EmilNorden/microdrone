@@ -1,10 +1,9 @@
 mod state;
 
-use embassy_time::{Duration, Ticker};
+use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_time::{Delay, Duration, Ticker};
 use embedded_hal::digital::OutputPin;
-use embedded_hal::spi::SpiDevice;
-use embedded_hal_bus::spi::AtomicDevice;
-use esp_hal::delay::Delay;
 use esp_hal::gpio::{Event, Input, Output};
 use esp_hal::spi::master::Spi;
 use esp_hal::Async;
@@ -20,7 +19,7 @@ use crate::signal::{
 
 #[embassy_executor::task]
 pub async fn run(
-    spi_device: AtomicDevice<'static, Spi<'static, Async>, Output<'static>, Delay>,
+    spi_device: SpiDevice<'static, NoopRawMutex, Spi<'static, Async>, Output<'static>>,
     ce: Output<'static>,
     mut irq: Input<'static>,
     mut input_signal: InputSignal,
@@ -45,8 +44,9 @@ pub async fn run(
         .payload_size(PayloadSize::Dynamic)
         .ack_payloads_enabled(true);
 
-    let mut delay = Delay::new();
-    let mut radio = match Nrf24l01::new_blocking(spi_device, ce, &mut delay, config) {
+    let mut delay = Delay;
+
+    let mut radio = match Nrf24l01::new_async(spi_device, ce, &mut delay, config).await {
         Ok(radio) => radio,
         Err(e) => {
             esp_println::println!("NRF24 Error : {:?}", e);
@@ -54,11 +54,11 @@ pub async fn run(
         }
     };
 
-    if !radio.is_connected().unwrap() {
+    if !radio.is_connected().await.unwrap() {
         esp_println::println!("!!! Radio not connected!");
     }
     esp_println::println!("TX Radio connected");
-    radio.open_writing_pipe(b"Node1").unwrap();
+    radio.open_writing_pipe(b"Node1").await.unwrap();
 
     esp_println::println!("Radio 1 started!");
 
@@ -75,9 +75,9 @@ pub async fn run(
 
         let input: FlightInput = input_signal.get().into();
 
-        match radio.write(&mut delay, input.as_bytes()) {
+        match radio.write(&mut delay, input.as_bytes()).await {
             Ok(_) => {
-                moving_sum.push(radio.retries_in_last_transmission().unwrap());
+                moving_sum.push(radio.retries_in_last_transmission().await.unwrap());
                 quality_update_ticker += 1;
                 if quality_update_ticker > QUALITY_UPDATE_FREQUENCY {
                     quality_update_ticker = 0;
@@ -87,13 +87,13 @@ pub async fn run(
 
                 irq.wait_for_low().await;
 
-                let status = radio.status().unwrap();
-                radio.reset_status().unwrap();
+                let status = radio.status().await.unwrap();
+                radio.reset_status().await.unwrap();
 
                 if status.reached_max_retries() {
                     esp_println::println!("MAX_RT");
                     total_failures += 1;
-                    radio.flush_tx().unwrap();
+                    radio.flush_tx().await.unwrap();
                 } else if let Some(ack) = read_ack(&mut radio).await {
                     radio_status_emitter.emit_if_changed(RadioStatus { connected: true });
                     //drone_status_emitter.emit(drone_status);
@@ -104,7 +104,7 @@ pub async fn run(
                 }
             }
             Err(e) => {
-                radio.reset_status().unwrap();
+                radio.reset_status().await.unwrap();
                 total_failures += 1;
                 esp_println::println!("ERR: Radio write error: {:?}", e);
             }
@@ -112,13 +112,15 @@ pub async fn run(
     }
 }
 
-async fn read_ack<SPI, CE>(radio: &mut Nrf24l01<SPI, CE, nrf24_rs::Sync>) -> Option<DroneStatus>
-where
-    SPI: SpiDevice,
-    CE: OutputPin,
-{
+async fn read_ack(
+    radio: &mut Nrf24l01<
+        SpiDevice<'static, NoopRawMutex, Spi<'static, Async>, Output<'static>>,
+        Output<'static>,
+        nrf24_rs::Async,
+    >,
+) -> Option<DroneStatus> {
     let mut ack_buffer = [0; 32];
-    match radio.read(&mut ack_buffer) {
+    match radio.read(&mut ack_buffer).await {
         Ok(len) => {
             if len != DRONE_STATUS_SIZE {
                 /* After connection has been re-established between controller and drone, it seems like

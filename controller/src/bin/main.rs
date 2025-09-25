@@ -7,6 +7,8 @@
 )]
 
 extern crate alloc;
+
+use core::cell::RefCell;
 use core::mem::ManuallyDrop;
 
 use controller::signal::{
@@ -16,19 +18,21 @@ use controller::signal::{
     new_radio_signal_emitter, radio_link_quality_signal, radio_signal,
 };
 use controller::{gui, input, radio};
+use embassy_embedded_hal::shared_bus::{asynch, blocking};
 use embassy_executor::Spawner;
-use embedded_hal_bus::spi::AtomicDevice;
-use embedded_hal_bus::util::AtomicCell;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_sync::blocking_mutex::NoopMutex;
+use embassy_sync::mutex::Mutex;
 use esp_hal::clock::CpuClock;
-use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::spi::master::{Config, Spi};
 use esp_hal::spi::Mode;
 use esp_hal::time::Rate;
 use esp_hal::timer::systimer::SystemTimer;
 use esp_hal::timer::timg::TimerGroup;
-use esp_hal::Async;
+use esp_hal::{Async, Blocking};
 use esp_wifi::EspWifiController;
+use static_cell::StaticCell;
 
 #[panic_handler]
 fn panic(p: &core::panic::PanicInfo) -> ! {
@@ -39,6 +43,10 @@ fn panic(p: &core::panic::PanicInfo) -> ! {
 // This creates a default app-descriptor required by the esp-idf bootloader.
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
 esp_bootloader_esp_idf::esp_app_desc!();
+
+static SPI2_BUS: StaticCell<Mutex<NoopRawMutex, Spi<Async>>> = StaticCell::new();
+//static SPI3_BUS: StaticCell<BlockingMutex<NoopRawMutex, Spi<Blocking>>> = StaticCell::new();
+static SPI3_BUS: StaticCell<NoopMutex<RefCell<Spi<Blocking>>>> = StaticCell::new();
 
 #[esp_hal_embassy::main]
 async fn main(spawner: Spawner) {
@@ -62,31 +70,40 @@ async fn main(spawner: Spawner) {
     let local_wifi: &'static EspWifiController<'static> = unsafe { core::mem::transmute(&local_wifi) };
     //let local_wifi:  &'static EspWifiController<'static> = unsafe { &*(&*local_wifi as *const _) };
 
-    let sclk = peripherals.GPIO37;
-    let mosi = peripherals.GPIO38;
-    let miso = peripherals.GPIO39;
-
-    let spi = Spi::new(
+    // Initialize SPI2
+    let spi2 = Spi::new(
         peripherals.SPI2,
         Config::default().with_frequency(Rate::from_mhz(4)).with_mode(Mode::_0),
     )
     .unwrap()
-    .with_sck(sclk)
-    .with_mosi(mosi)
-    .with_miso(miso)
+    .with_sck(peripherals.GPIO37)
+    .with_mosi(peripherals.GPIO38)
+    .with_miso(peripherals.GPIO39)
     .into_async();
-    let shared_bus = AtomicCell::new(spi);
-    let shared_bus = ManuallyDrop::new(shared_bus);
-    let local_shared_bus: &'static AtomicCell<Spi<Async>> = unsafe { core::mem::transmute(&shared_bus) };
+
+    let spi2_bus = Mutex::new(spi2);
+    let spi2_bus = SPI2_BUS.init(spi2_bus);
+
+    // Initialize SPI3
+    let spi3 = Spi::new(
+        peripherals.SPI3,
+        Config::default().with_frequency(Rate::from_mhz(4)).with_mode(Mode::_0),
+    )
+    .unwrap()
+    .with_sck(peripherals.GPIO16)
+    .with_mosi(peripherals.GPIO17)
+    .with_miso(peripherals.GPIO18);
+
+    let spi3_bus = SPI3_BUS.init(NoopMutex::new(RefCell::new(spi3)));
 
     let display_cs = Output::new(peripherals.GPIO36, Level::High, OutputConfig::default());
     let display_rst = Output::new(peripherals.GPIO19, Level::Low, OutputConfig::default());
     let display_dc = Output::new(peripherals.GPIO35, Level::Low, OutputConfig::default());
-    let display_device = AtomicDevice::new(local_shared_bus, display_cs, Delay::new()).unwrap();
+    let display_device = blocking::spi::SpiDevice::new(spi3_bus, display_cs);
 
-    let radio_csn = Output::new(peripherals.GPIO14, Level::High, OutputConfig::default());
+    let radio_cs = Output::new(peripherals.GPIO14, Level::High, OutputConfig::default());
     let radio_ce = Output::new(peripherals.GPIO13, Level::Low, OutputConfig::default());
-    let radio_device = AtomicDevice::new(local_shared_bus, radio_csn, Delay::new()).unwrap();
+    let radio_device = asynch::spi::SpiDevice::new(spi2_bus, radio_cs);
     let radio_irq = Input::new(peripherals.GPIO12, InputConfig::default().with_pull(Pull::Up));
 
     /* Create signal emitters */

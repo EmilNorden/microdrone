@@ -230,7 +230,7 @@ name = "controller"
 version = "0.1.0"
 dependencies = [
  "bt-hci",
- "embassy-embedded-hal",
+ "embassy-embedded-hal 0.5.0",
  "embassy-executor",
  "embassy-futures",
  "embassy-sync 0.7.2",
@@ -252,6 +252,7 @@ dependencies = [
  "num-traits",
  "paste",
  "ssd1351",
+ "static_cell",
  "tinyui",
  "trouble-host",
  "uom",
@@ -360,6 +361,15 @@ dependencies = [
 
 [[package]]
 name = "defmt"
+version = "0.3.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0963443817029b2024136fc4dd07a5107eb8f977eaf18fcd1fdeb11306b64ad"
+dependencies = [
+ "defmt 1.0.1",
+]
+
+[[package]]
+name = "defmt"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "548d977b6da32fa1d1fda2876453da1e7df63ad0304c8b3dae4dbe7b96f39b78"
@@ -453,6 +463,23 @@ dependencies = [
  "embassy-hal-internal",
  "embassy-sync 0.7.2",
  "embassy-time 0.4.0",
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "embedded-storage",
+ "embedded-storage-async",
+ "nb 1.1.0",
+]
+
+[[package]]
+name = "embassy-embedded-hal"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "554e3e840696f54b4c9afcf28a0f24da431c927f4151040020416e7393d6d0d8"
+dependencies = [
+ "embassy-futures",
+ "embassy-hal-internal",
+ "embassy-sync 0.7.2",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
@@ -798,7 +825,7 @@ dependencies = [
  "delegate",
  "digest",
  "document-features",
- "embassy-embedded-hal",
+ "embassy-embedded-hal 0.3.1",
  "embassy-futures",
  "embassy-sync 0.6.2",
  "embassy-usb-driver",
@@ -1097,7 +1124,7 @@ dependencies = [
 name = "fc-common"
 version = "0.1.0"
 dependencies = [
- "defmt",
+ "defmt 1.0.1",
  "embassy-futures",
  "embassy-sync 0.7.2",
  "embassy-time 0.5.0",
@@ -1618,7 +1645,9 @@ checksum = "0676bb32a98c1a483ce53e500a81ad9c3d5b3f7c920c28c24e9cb0980d0b5bc8"
 name = "nrf24-rs"
 version = "0.2.0"
 dependencies = [
+ "defmt 0.3.100",
  "embedded-hal 1.0.0",
+ "embedded-hal-async",
 ]
 
 [[package]]
