@@ -66,7 +66,7 @@ pub async fn run(
     let mut i = 0;
     let mut moving_sum: MovingSum<u8, u16, 50> = MovingSum::new();
     let mut quality_update_ticker = 0;
-    const QUALITY_UPDATE_FREQUENCY: usize = 5;
+    const QUALITY_UPDATE_FREQUENCY: usize = 10;
     let mut total_failures = 0;
     loop {
         ticker.next().await;
@@ -77,6 +77,8 @@ pub async fn run(
 
         match radio.write(&mut delay, input.as_bytes()).await {
             Ok(_) => {
+                irq.wait_for_low().await;
+
                 moving_sum.push(radio.retries_in_last_transmission().await.unwrap());
                 quality_update_ticker += 1;
                 if quality_update_ticker > QUALITY_UPDATE_FREQUENCY {
@@ -84,8 +86,6 @@ pub async fn run(
                     let link_score = 1.0 - (moving_sum.average() / 15.0);
                     radio_link_quality_emitter.emit(link_score);
                 }
-
-                irq.wait_for_low().await;
 
                 let status = radio.status().await.unwrap();
                 radio.reset_status().await.unwrap();
@@ -96,7 +96,6 @@ pub async fn run(
                     radio.flush_tx().await.unwrap();
                 } else if let Some(ack) = read_ack(&mut radio).await {
                     radio_status_emitter.emit_if_changed(RadioStatus { connected: true });
-                    //drone_status_emitter.emit(drone_status);
                     drone_altitude_emitter.emit(ack.altitude);
                     drone_battery_emitter.emit(ack.battery_level);
                 } else {
