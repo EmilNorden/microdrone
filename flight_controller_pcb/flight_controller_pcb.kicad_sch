@@ -7449,7 +7449,7 @@
 	)
 	(wire
 		(pts
-			(xy 158.75 90.17) (xy 165.1 90.17)
+			(xy 158.75 92.71) (xy 165.1 92.71)
 		)
 		(stroke
 			(width 0)
@@ -7869,7 +7869,7 @@
 	)
 	(wire
 		(pts
-			(xy 158.75 95.25) (xy 165.1 95.25)
+			(xy 158.75 97.79) (xy 165.1 97.79)
 		)
 		(stroke
 			(width 0)
@@ -8739,6 +8739,16 @@
 	)
 	(wire
 		(pts
+			(xy 158.75 85.09) (xy 165.1 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bbe039fa-a834-42bc-bfba-ba87cf19aa76")
+	)
+	(wire
+		(pts
 			(xy 69.85 72.39) (xy 76.2 72.39)
 		)
 		(stroke
@@ -8749,7 +8759,7 @@
 	)
 	(wire
 		(pts
-			(xy 158.75 87.63) (xy 165.1 87.63)
+			(xy 158.75 90.17) (xy 165.1 90.17)
 		)
 		(stroke
 			(width 0)
@@ -8769,7 +8779,7 @@
 	)
 	(wire
 		(pts
-			(xy 158.75 92.71) (xy 165.1 92.71)
+			(xy 158.75 95.25) (xy 165.1 95.25)
 		)
 		(stroke
 			(width 0)
@@ -9519,6 +9529,16 @@
 	)
 	(wire
 		(pts
+			(xy 158.75 87.63) (xy 165.1 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fd0e5183-464a-4005-b6e8-9fbdd65962f7")
+	)
+	(wire
+		(pts
 			(xy 424.18 115.57) (xy 433.07 115.57)
 		)
 		(stroke
@@ -9528,7 +9548,7 @@
 		(uuid "fe528228-b135-4051-95e2-400512f3635c")
 	)
 	(label "NRF24_CSN"
-		(at 158.75 85.09 0)
+		(at 165.1 85.09 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -9678,7 +9698,7 @@
 		(uuid "26a4e184-a406-408b-a60b-a20b4bc268c7")
 	)
 	(label "ESC4"
-		(at 165.1 87.63 0)
+		(at 165.1 90.17 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -9808,7 +9828,7 @@
 		(uuid "5915cf21-7c47-4047-95b6-7ded1812a665")
 	)
 	(label "NRF_IRQ"
-		(at 123.19 95.25 180)
+		(at 123.19 120.65 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -9838,7 +9858,7 @@
 		(uuid "5e3f05ae-5898-4f04-8da5-8ad7cf777b7d")
 	)
 	(label "ESC1"
-		(at 165.1 95.25 0)
+		(at 165.1 97.79 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -9848,12 +9868,12 @@
 		(uuid "5e47ca6a-3326-45d2-8003-9e25a0c9ed6d")
 	)
 	(label "NRF24_CE"
-		(at 123.19 120.65 180)
+		(at 165.1 87.63 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left bottom)
 		)
 		(uuid "5f7d9864-20a2-42c6-81f6-fbc0661da69d")
 	)
@@ -9898,7 +9918,7 @@
 		(uuid "7a346816-021b-4d7e-8c60-cf6acf2ed9f1")
 	)
 	(label "ESC3"
-		(at 165.1 90.17 0)
+		(at 165.1 92.71 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -10208,7 +10228,7 @@
 		(uuid "e3c7dc80-cc89-47e0-8468-cc48ab38bf67")
 	)
 	(label "ESC2"
-		(at 165.1 92.71 0)
+		(at 165.1 95.25 0)
 		(effects
 			(font
 				(size 1.27 1.27)
