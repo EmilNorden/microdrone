@@ -6802,12 +6802,6 @@
 		(uuid "0b7e0700-b58a-4564-b440-58f8d5a5a3a6")
 	)
 	(junction
-		(at 91.44 247.65)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "0bb81dc8-9b41-4775-ae6d-41f060bc17f3")
-	)
-	(junction
 		(at 220.98 359.41)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6872,6 +6866,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "230a9ce8-e7d5-4755-b593-95d2a92c5376")
+	)
+	(junction
+		(at 88.9 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "28ff745f-4ee2-4c91-9732-f2bfccb2f01f")
 	)
 	(junction
 		(at 44.45 386.08)
@@ -7209,7 +7209,7 @@
 	)
 	(wire
 		(pts
-			(xy 85.09 247.65) (xy 91.44 247.65)
+			(xy 85.09 247.65) (xy 88.9 247.65)
 		)
 		(stroke
 			(width 0)
@@ -7396,6 +7396,16 @@
 			(type default)
 		)
 		(uuid "1ddb4cbe-be47-4480-a22c-94fd544e6682")
+	)
+	(wire
+		(pts
+			(xy 88.9 247.65) (xy 95.25 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1f5aa016-7033-4e4b-8ada-f5318d647469")
 	)
 	(wire
 		(pts
@@ -7626,6 +7636,16 @@
 			(type default)
 		)
 		(uuid "357325f9-e327-49cf-83d3-34b69b2e8199")
+	)
+	(wire
+		(pts
+			(xy 88.9 243.84) (xy 88.9 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3b62933c-6420-46c2-8679-3128b09c2fef")
 	)
 	(wire
 		(pts
@@ -7866,6 +7886,16 @@
 			(type default)
 		)
 		(uuid "54904a45-0ad3-4d89-9000-d3839fd58e7b")
+	)
+	(wire
+		(pts
+			(xy 91.44 233.68) (xy 92.71 233.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "54ff11b1-da09-4cd8-8836-1f227dc6b679")
 	)
 	(wire
 		(pts
@@ -8159,6 +8189,16 @@
 	)
 	(wire
 		(pts
+			(xy 88.9 232.41) (xy 88.9 236.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7a5a64a9-ced5-426b-9582-d9e61b89a946")
+	)
+	(wire
+		(pts
 			(xy 69.85 69.85) (xy 76.2 69.85)
 		)
 		(stroke
@@ -8266,16 +8306,6 @@
 			(type default)
 		)
 		(uuid "8645d2c9-8a16-4cc9-a18f-c35ee34b270a")
-	)
-	(wire
-		(pts
-			(xy 91.44 232.41) (xy 91.44 236.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "87704e8f-9d99-4188-aac1-13f792a46f55")
 	)
 	(wire
 		(pts
@@ -8449,16 +8479,6 @@
 	)
 	(wire
 		(pts
-			(xy 91.44 247.65) (xy 95.25 247.65)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "97493b4d-b074-4fcb-a80a-839f211602e3")
-	)
-	(wire
-		(pts
 			(xy 49.53 383.54) (xy 49.53 386.08)
 		)
 		(stroke
@@ -8536,16 +8556,6 @@
 			(type default)
 		)
 		(uuid "a0f6e32b-1469-4a29-a379-07e906fdc1e0")
-	)
-	(wire
-		(pts
-			(xy 91.44 243.84) (xy 91.44 247.65)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a1273ba8-a40d-4e56-844a-4d3c4876583a")
 	)
 	(wire
 		(pts
@@ -8646,6 +8656,16 @@
 			(type default)
 		)
 		(uuid "ad95510a-761a-451a-9d2e-e8128451cd77")
+	)
+	(wire
+		(pts
+			(xy 91.44 232.41) (xy 91.44 233.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ade4f427-9a4d-4e03-b962-042419c2da89")
 	)
 	(wire
 		(pts
@@ -20081,7 +20101,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 88.9 232.41 0)
+		(at 92.71 233.68 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -20090,7 +20110,7 @@
 		(fields_autoplaced yes)
 		(uuid "cc4e8baf-ca65-48be-aa6a-1ffa89262dd3")
 		(property "Reference" "#PWR018"
-			(at 88.9 238.76 0)
+			(at 99.06 233.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20099,15 +20119,16 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 88.9 237.49 0)
+			(at 96.52 233.6799 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify right)
 			)
 		)
 		(property "Footprint" ""
-			(at 88.9 232.41 0)
+			(at 92.71 233.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20116,7 +20137,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 88.9 232.41 0)
+			(at 92.71 233.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20125,7 +20146,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 88.9 232.41 0)
+			(at 92.71 233.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21543,7 +21564,7 @@
 	)
 	(symbol
 		(lib_id "Device:D_Schottky")
-		(at 91.44 240.03 90)
+		(at 88.9 240.03 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -21552,7 +21573,7 @@
 		(fields_autoplaced yes)
 		(uuid "fd79eef6-0606-487f-b79b-8980ff641486")
 		(property "Reference" "D4"
-			(at 93.98 239.0774 90)
+			(at 91.44 239.0774 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21561,7 +21582,7 @@
 			)
 		)
 		(property "Value" "D_Schottky"
-			(at 93.98 241.6174 90)
+			(at 91.44 241.6174 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21570,7 +21591,7 @@
 			)
 		)
 		(property "Footprint" "fclib:Diode_SMD_SOD-723"
-			(at 91.44 240.03 0)
+			(at 88.9 240.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21579,7 +21600,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 91.44 240.03 0)
+			(at 88.9 240.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21588,7 +21609,7 @@
 			)
 		)
 		(property "Description" "Schottky diode (C8526 or C116010 for lead-free)"
-			(at 91.44 240.03 0)
+			(at 88.9 240.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
